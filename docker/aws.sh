@@ -6,9 +6,32 @@
 # permission/owner changes. Instead, we have to work out of tmp
 # Instead of going that route, copy the bin and xslt dirs into tmp and run that buildfile
 
+set -euo pipefail
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+
+function clean_source_workspace() {
+	echo "$1" 1>&2 &&
+		rm -rf "/tmp/opt/cdcp/source" 1>&2 &&
+		mkdir -p "/tmp/opt/cdcp/source" 1>&2
+}
+
+# Set defaults for lambda for certain unset ENV vars:
+set -a
+: "${ANT_BUILDFILE:=bin/build.xml}"
+: "${ALLOW_DELETE:=false}"
+: "${EXPAND_DEFAULT_ATTRIBUTES:=false}"
+set +a
+
 echo "Populating working dir with essentials" 1>&2
 cp -r /opt/cdcp/bin /tmp/opt/cdcp 1>&2
 cp -r /opt/cdcp/xslt /tmp/opt/cdcp 1>&2
+
+if [[ -v "ALLOW_DELETE" && "$ALLOW_DELETE" = true ]]; then
+	DELETE_ENABLED=true
+else
+	DELETE_ENABLED=false
+fi
 
 function handler() {
 	echo "Parsing event notification" 1>&2
@@ -23,18 +46,22 @@ function handler() {
 		if [[ "$EVENTNAME" =~ ^ObjectCreated ]]; then
 
 			echo "Processing requested for s3://${S3_BUCKET}/${TEI_FILE}" 1>&2
+			clean_source_workspace "Cleaning source workspace..." &&
+				echo "Done" 1>&2
 
 			# Process requested file
 			echo "Downloading s3://${S3_BUCKET}/${TEI_FILE}" 1>&2
 			aws s3 cp --quiet s3://${S3_BUCKET}/${TEI_FILE} /tmp/opt/cdcp/source/${TEI_FILE} 1>&2 &&
 				echo "Processing ${TEI_FILE}" 1>&2
-			(/opt/ant/bin/ant -buildfile /tmp/opt/cdcp/bin/build.xml $ANT_TARGET -Dfiles-to-process=$TEI_FILE) 1>&2 &&
+			(/opt/ant/bin/ant -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} $ANT_TARGET -Dfiles-to-process=$TEI_FILE) 1>&2 &&
+				clean_source_workspace "Cleaning up source workspace" &&
 				echo "OK" 1>&2
-		elif [[ "$EVENTNAME" =~ ^ObjectRemoved ]]; then
+		elif [[ "$EVENTNAME" =~ ^ObjectRemoved && "$DELETE_ENABLED" = true ]]; then
 			echo "Removing all outputs for: s3://${S3_BUCKET}/${TEI_FILE} from s3://${AWS_OUTPUT_BUCKET}" 1>&2
 			FILENAME=$(basename $TEI_FILE ".xml")
 			CONTAINING_DIR=$(dirname "$TEI_FILE")
-			aws s3 rm s3://${AWS_OUTPUT_BUCKET} --recursive --exclude "*" --include "**/${FILENAME}.json" --include "html/${CONTAINING_DIR}/${FILENAME}.html" --include "core-xml/${TEI_FILE}" --include "${TEI_FILE}" 1>&2 &&
+			# Do not execute delete, even when ALLOW_DELETE is true, to allow for testing of the consequences of the command
+			aws s3 rm s3://${AWS_OUTPUT_BUCKET} --dryrun --recursive --exclude "*" --include "**/${FILENAME}.${OUTPUT_EXTENSION}" --include "${FILENAME}.${OUTPUT_EXTENSION}" 1>&2 &&
 				echo "OK" 1>&2
 		else
 			echo "ERROR: Unsupported event: ${EVENTNAME}" 1>&2

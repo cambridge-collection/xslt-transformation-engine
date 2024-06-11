@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-mkdir -p /tmp/opt/cdcp/dist && mkdir -p /tmp/opt/cdcp/dist-pending/collection-xml && mkdir -p /tmp/opt/cdcp/transcriptions && mkdir -p /tmp/opt/cdcp/cudl-data-source
+mkdir -p /tmp/opt/cdcp/dist && mkdir -p /tmp/opt/cdcp/transcriptions && mkdir -p /tmp/opt/cdcp/cudl-data-source
 
 # Initialization - load function handler
 source $LAMBDA_TASK_ROOT/"$(echo $_HANDLER | cut -d. -f1).sh"

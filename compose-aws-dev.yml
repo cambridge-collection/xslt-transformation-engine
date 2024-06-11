@@ -4,13 +4,18 @@ services:
       context: ./docker
       dockerfile: Dockerfile
     container_name: cdcp-xslt-processing-aws-dev
-    env_file:
-      - env
     environment:
       ENVIRONMENT: aws-local
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+      AWS_OUTPUT_BUCKET: ${AWS_OUTPUT_BUCKET}
+      ANT_BUILDFILE: ${ANT_BUILDFILE:-bin/build.xml}
       ANT_TARGET: ${ANT_TARGET:-full}
+      XSLT_ENTRYPOINT: ${XSLT_ENTRYPOINT:-xslt/TEI-to-HTML.xsl}
+      OUTPUT_EXTENSION: ${OUTPUT_EXTENSION:-html}
+      ALLOW_DELETE: ${ALLOW_DELETE:-false}
+      EXPAND_DEFAULT_ATTRIBUTES: ${EXPAND_DEFAULT_ATTRIBUTES:-false}
     ports:
       - 9000:8080
+

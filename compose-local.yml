@@ -9,7 +9,12 @@ services:
     environment:
       ENVIRONMENT: local
       TEI_FILE: ${TEI_FILE:-**/*.xml}
+      ANT_BUILDFILE: ${ANT_BUILDFILE:-bin/build.xml}
       ANT_TARGET: ${ANT_TARGET:-full}
+      XSLT_ENTRYPOINT: ${XSLT_ENTRYPOINT:-xslt/TEI-to-HTML.xsl}
+      OUTPUT_EXTENSION: ${OUTPUT_EXTENSION:-html}
+      ALLOW_DELETE: false
+      EXPAND_DEFAULT_ATTRIBUTES: ${EXPAND_DEFAULT_ATTRIBUTES:-false}
     volumes:
       - out:/tmp/opt/cdcp/out
       - source:/tmp/opt/cdcp/source
