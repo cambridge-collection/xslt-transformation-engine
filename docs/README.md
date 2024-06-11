@@ -4,7 +4,7 @@ This repository provides a dockerised version of the core infrastructure for per
 
 The engine runs as either:
 
-	* an AWS lambda that responds to an SQS notification informing it of a file change to source file in an S3 bucket. The results are output into the S3 bucket defined by the `AWS_OUTPUT_BUCKET` environment variable. While this version is only capable of handling one file at a time, you can scale the number of lambdas so that it can handle hundreds of requests files at once.
+* an AWS lambda that responds to an SQS notification informing it of a file change to source file in an S3 bucket. The results are output into the S3 bucket defined by the `AWS_OUTPUT_BUCKET` environment variable. While this version is only capable of handling one file at a time, you can scale the number of lambdas so that it can handle hundreds of requests files at once.
 * a standalone build suitable for local builds or CI/CD that acts upon any number of items contained within the `sample-implementation/render-only/source` dir. The outputs are copied to `sample-implementation/render-only/out`.
 
 ## Sample Implementation
@@ -48,7 +48,7 @@ You will also need the necessary AWS credentials stored in the following environ
 
 ### Running the AWS container locally
 
-    docker compose --env-file ./my-aws-environment-vars -f compose-aws-dev.yml up --force-recreate --build
+    $ docker compose --env-file ./my-aws-environment-vars -f compose-aws-dev.yml up --force-recreate --build
 
 
 **DO NOT USE `docker-sample-data.yml` to build the container for deployment within AWS.** Instead, follow the instructions for [building the lambda for deployment in AWS](#building-the-lambda-for-deployment-in-aws).
@@ -57,7 +57,7 @@ You will also need the necessary AWS credentials stored in the following environ
 
 The AWS Lambda responds to SQS messages. To transform a file, you need to submit a JSON file with the SQS structure with a `POST` request to `http://localhost:9000/2015-03-31/functions/function/invocations`:
 
-    curl -X POST -H 'Content-Type: application/json' 'http://localhost:9000/2015-03-31/functions/function/invocations' --data-binary "@./path/to/my-sqs-notification.json"
+    $ curl -X POST -H 'Content-Type: application/json' 'http://localhost:9000/2015-03-31/functions/function/invocations' --data-binary "@./path/to/my-sqs-notification.json"
 
 
 ### Test Messages
@@ -99,14 +99,14 @@ You must specify the file you want to process using the environment variable `TE
 
 To process `my_awesome_tei/sample.xml`, you would run the following:
 
-    export TEI_FILE=my_awesome_tei/sample.xml
-    docker compose --env-file ./my-local-environment-vars -f compose-aws-dev.yml up --force-recreate --build cdcp-local
+    $ export TEI_FILE=my_awesome_tei/sample.xml
+    $ docker compose --env-file ./my-local-environment-vars -f compose-aws-dev.yml up --force-recreate --build cdcp-local
 
 
 `TEI_FILE` accepts wildcards. The following will transform both sample files:
 
-    export TEI_FILE=**/*.xml
-    docker compose --env-file ./my-local-environment-vars -f compose-local.yml  up --force-recreate --build
+    $ export TEI_FILE=**/*.xml
+    $ docker compose --env-file ./my-local-environment-vars -f compose-local.yml  up --force-recreate --build
 
 You cannot pass multiple files (with paths) to the container. It only accepts a single file or literal wildcards.
 
@@ -114,7 +114,7 @@ If the `TEI_FILE` environment variable is not set, the container will assume tha
 
 ## Building the lambda for deployment in AWS
 
-    docker build -t cdcp-xslt-transformation-engine --platform linux/amd64 .
+    $ docker build -t cdcp-xslt-transformation-engine --platform linux/amd64 .
 
 ## Rolling your own implementation
 
