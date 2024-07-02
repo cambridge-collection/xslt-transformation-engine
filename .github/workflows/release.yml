@@ -1,10 +1,10 @@
 # Uses https://github.com/semantic-release/semantic-release
-name: release
+name: Release new version
 run-name: Release code @ ${{ github.sha }}
 on:
   push:
     branches:
-      - 'ci-test'
+      - main
 
 permissions:
   contents: write # to be able to publish a GitHub release

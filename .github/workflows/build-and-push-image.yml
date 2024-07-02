@@ -1,8 +1,8 @@
-name: ci
+name: Build and push image to ghcr.io
 
 on:
   workflow_run:
-    workflows: [ "release" ]
+    workflows: [ "Release new version" ]
     types:
       - completed
 
