@@ -1,9 +1,10 @@
 services:
   aws-dev:
+    platform: linux/amd64
     build:
       context: ./docker
       dockerfile: Dockerfile
-    container_name: cdcp-xslt-processing-aws-dev
+    container_name: xslt-transformation-engine-aws-dev
     environment:
       ENVIRONMENT: aws-local
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
@@ -18,4 +19,3 @@ services:
       EXPAND_DEFAULT_ATTRIBUTES: ${EXPAND_DEFAULT_ATTRIBUTES:-false}
     ports:
       - 9000:8080
-
