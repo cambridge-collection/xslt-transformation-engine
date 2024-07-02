@@ -117,6 +117,6 @@ If the `TEI_FILE` environment variable is not set, the container will assume tha
 
     $ docker build -t cdcp-xslt-transformation-engine --platform linux/amd64 .
 
-## Rolling your own implementation
+## Creating your own transformation scenario
 
-For instructions on how to roll your own transformation scenario, see <https://github.com/cambridge-collection/xslt-transformation-engine-scenario-template>
+For instructions on how to create your own transformation scenario, see <https://github.com/cambridge-collection/xslt-transformation-engine-scenario-template>
