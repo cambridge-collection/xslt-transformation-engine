@@ -9,7 +9,7 @@
 
     <!-- The following switches can be passed when invoking ant to provide custom values -->
     <property name="data.dir"  value="./source"/><!-- Source of the original data files -->
-    <property name="dist.dir"  value="./out"/><!-- Final dist dir (local build only) -->
+    <property name="dist.dir"  value="./out"/><!-- Final dist dir (standalone build only) -->
 
     <property name="dist-pending.dir"  value="./dist-pending"/><!-- Initial output directory -->
     <property name="files-to-process" value="*.xml"/><!-- File(s) to build -->
@@ -61,10 +61,10 @@
 
      <!-- Private tasks called from main tasks -->
 
-    <target name="release-outputs" depends="if.local.environment">
+    <target name="release-outputs" depends="if.standalone.environment">
         <antcall target="run.posthook"/>
-        <antcall if:true="${is.local.environment}" target="_copy_to_dist"/>
-        <antcall unless:true="${is.local.environment}" target="_copy_to_s3"/>
+        <antcall if:true="${is.standalone.environment}" target="_copy_to_dist"/>
+        <antcall unless:true="${is.standalone.environment}" target="_copy_to_s3"/>
     </target>
 
     <target name="_copy_to_dist">
@@ -97,9 +97,9 @@
         </exec>
     </target>
 
-    <target name="if.local.environment">
-        <condition property="is.local.environment" value="true" else="false">
-            <equals arg1="${ENVIRONMENT}" arg2="local" trim="true"/>
+    <target name="if.standalone.environment">
+        <condition property="is.standalone.environment" value="true" else="false">
+            <equals arg1="${ENVIRONMENT}" arg2="standalone" trim="true"/>
         </condition>
     </target>
 
