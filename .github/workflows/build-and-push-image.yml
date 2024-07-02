@@ -8,7 +8,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  ORGANISATION: cambridge-collection
   IMAGE_NAME: ${{ github.repository }}
 
 permissions:
@@ -33,7 +32,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: cambridge-collection/${{ github.repository }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
             latest=auto
           tags: |
