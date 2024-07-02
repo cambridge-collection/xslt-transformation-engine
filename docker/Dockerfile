@@ -1,5 +1,7 @@
 FROM public.ecr.aws/lambda/provided:al2
 
+LABEL org.opencontainers.image.description='The Apache ANT-based XSLT Transformation used by the Cambridge Digital Collection Platform'
+
 ENV ANT_VERSION=1.10.14
 ENV ANT_HOME=/opt/ant
 
