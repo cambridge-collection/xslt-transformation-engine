@@ -21,7 +21,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
           fetch-depth: 0
 
       - name: Set up QEMU
@@ -34,10 +33,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: |
-            ${{ env.REGISTRY }}/${{ env.ORGANISATION }}/${{ env.IMAGE_NAME }}
+          images: ghcr.io/cambridge-collection/${{ github.repository }}
           tags: |
-            type=ref,event=branch
+            latest
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
