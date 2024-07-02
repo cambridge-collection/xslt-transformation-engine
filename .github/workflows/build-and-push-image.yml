@@ -1,10 +1,10 @@
 name: Build and push image to ghcr.io
 
 on:
-  workflow_run:
-    workflows: [ "Release new version" ]
-    types:
-      - completed
+  branches:
+    - main
+  tags:
+      - 'v*'
 
 env:
   REGISTRY: ghcr.io
@@ -34,7 +34,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
-            latest=auto
+            latest=true
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
