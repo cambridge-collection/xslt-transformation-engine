@@ -2,7 +2,7 @@ name: ci
 
 on:
   workflow_run:
-    workflows: [Release new version]
+    workflows: [ "release" ]
     types:
       - completed
 
