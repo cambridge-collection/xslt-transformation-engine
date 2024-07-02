@@ -2,8 +2,6 @@ name: Build and push image to ghcr.io
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
 
