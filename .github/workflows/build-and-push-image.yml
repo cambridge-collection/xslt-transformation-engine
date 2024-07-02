@@ -33,9 +33,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/cambridge-collection/${{ github.repository }}
+          images: cambridge-collection/${{ github.repository }}
+          flavor: |
+            latest=auto
           tags: |
-            latest
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
