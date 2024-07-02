@@ -1,9 +1,10 @@
 name: Build and push image to ghcr.io
 
 on:
-  branches:
-    - main
-  tags:
+  push:
+    branches:
+      - main
+    tags:
       - 'v*'
 
 env:
