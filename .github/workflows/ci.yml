@@ -28,7 +28,7 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
-          context: {{defaultContext}}:docker
+          context: "{{defaultContext}}:docker"
           platforms: linux/amd64
           push: true
           tags: ghcr.io/cambridge-collection/xslt-transformation-engine:latest
