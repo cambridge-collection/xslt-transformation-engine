@@ -1,13 +1,11 @@
 services:
-  local:
+  standalone:
     build:
       context: ./docker
       dockerfile: Dockerfile
-    container_name: cdcp-xslt-processing-local
-    env_file:
-      - env
+    container_name: xslt-transformation-engine-standalone
     environment:
-      ENVIRONMENT: local
+      ENVIRONMENT: standalone
       TEI_FILE: ${TEI_FILE:-**/*.xml}
       ANT_BUILDFILE: ${ANT_BUILDFILE:-bin/build.xml}
       ANT_TARGET: ${ANT_TARGET:-full}
@@ -18,7 +16,7 @@ services:
     volumes:
       - out:/tmp/opt/cdcp/out
       - source:/tmp/opt/cdcp/source
-    entrypoint: [ "bash", "-c", "-l", "/var/task/local.sh" ]
+    entrypoint: [ "bash", "-c", "-l", "/var/task/standalone.sh" ]
 volumes:
   out:
     driver: local
