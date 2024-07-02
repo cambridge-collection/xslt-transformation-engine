@@ -1,5 +1,5 @@
 # Uses https://github.com/semantic-release/semantic-release
-name: Release new version
+name: release
 run-name: Release code @ ${{ github.sha }}
 on:
   push:
