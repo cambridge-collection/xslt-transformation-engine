@@ -120,4 +120,3 @@ If the `TEI_FILE` environment variable is not set, the container will assume tha
 ## Creating your own transformation scenario
 
 For instructions on how to create your own transformation scenario, see <https://github.com/cambridge-collection/xslt-transformation-engine-scenario-template>
-
