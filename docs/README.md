@@ -1,11 +1,9 @@
 # XSLT Transformation Engine
 
-This repository provides a dockerised version of the core infrastructure for performing XSLT Transformations by the [Cambridge Digital Collection Platform's TEI Processing](https://cambridge-collection.github.io/tei-data-processing-overview). 
-
-The engine runs as either:
+This repository provides a dockerised version of the core infrastructure for performing XSLT Transformations by the [Cambridge Digital Collection Platform](https://cambridge-collection.github.io/tei-data-processing-overview). It runs as either:
 
 * an AWS lambda that responds to an SQS notification informing it of a file change to source file in an S3 bucket. The results are output into the S3 bucket defined by the `AWS_OUTPUT_BUCKET` environment variable. While this version is only capable of handling one file at a time, you can scale the number of lambdas so that it can handle hundreds of requests files at once.
-* a standalone build suitable for builds that run locally or within a CI/CD system. It acts upon any number of items contained within the `./source` dir. The outputs are copied to `./out`.
+* a standalone build suitable for running locally or within a CI/CD system. It acts upon any number of items contained within the `./source` dir. The outputs are copied to `./out`.
 
 ## Sample Implementation
 
@@ -19,13 +17,13 @@ A sample implementation of an XSLT transformation scenario is included. It conta
 
 Both versions require additional specific environment parameters, but the following are common to both:
 
-| Variable Name             | Description                                                                                                                                                                                                                                                                                                                                             | Default value if not set in container |
-|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------|
-| ENVIRONMENT               | *[Required]* Environment type for the build. It should be either `aws-dev` or `standalone`.                                                                                                                                                                                                                                                             |                                       |
-| ANT_BUILDFILE             | *[Optional]* Buildfile to use                                                                                                                                                                                                                                                                                                                           | `bin/build.xml`                       |
-| XSLT_ENTRYPOINT           | *[Required]* Path to the XSLT file to use for the transformation. The path is relative to the `docker` directory. The sample implementation sets the value to `xslt/TEI-to-HTML.xsl`.                                                                                                                                                                   |                                       |
-| OUTPUT_EXTENSION          | *[Required]* Extension for the output file(s). The sample implementation sets the value to `html`.                                                                                                                                                                                                                                                      |                                       |
-| EXPAND_DEFAULT_ATTRIBUTES | *[Optional]* Determines whether default attribute values defined in the schema or DTD are inserted into the output document during the transformation. This is expected behaviour but it might not be the desired behaviour when performing an identity transform intended to permanently change the source file. Accepts the values: `true` or `false` | `false`                               |
+| Variable Name             | Description                                                                                                                                                                                                                                                                                                                                            | Default value if not set in container |
+|---------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------|
+| ENVIRONMENT               | *[Required]* Environment type for the build. It should be either `aws-dev` or `standalone`.                                                                                                                                                                                                                                                            |                                       |
+| ANT_BUILDFILE             | *[Optional]* Buildfile to use                                                                                                                                                                                                                                                                                                                          | `bin/build.xml`                       |
+| XSLT_ENTRYPOINT           | *[Required]* Path to the XSLT file to use for the transformation. The path is relative to the `docker` directory. The default XSLT **is not** suitable for anything more than testing that the environment is working.                                                                                                                                 | `xslt/TEI-to-HTML.xsl`                |
+| OUTPUT_EXTENSION          | *[Required]* Extension for the output file(s). Accepts the values `html` and `xml`.                                                                                                                                                                                                                                                                    | `html`                                  |
+| EXPAND_DEFAULT_ATTRIBUTES | *[Optional]* Determines whether default attribute values defined in the schema or DTD are inserted into the output document during the transformation. This is expected behaviour but it might not be the desired behaviour when performing an identity transform intended to permanently alter the source file. Accepts the values: `true` or `false` | `false`                               |
 
 See [AWS Environment variables](#aws-environment-variables) and [Standalone Container variables](#standalone-container-environment-variables)
 
@@ -40,12 +38,13 @@ The following environment variables are needed in addition to the [Required Envi
 | `AWS_OUTPUT_BUCKET` | *[Required]* Name of the output S3 bucket                                                                                                                                                            |               |
 | `ALLOW_DELETE`      | *[Optional]* Determines whether the lambda will deleted generated outputs of the file in `AWS_OUTPUT_BUCKET`. It accepts the values `true` or `false`. _This feature is currently not implemented. _ | `false`       |
 
-You will also need the necessary AWS credentials stored in the following environment variables:
+You will also need the necessary AWS credentials stored in the following environment variables to run AWS locally for development:
 
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_SECRET_ACCESS_KEY`
 
+**Do not set (or use) these variables when running in an AWS lambda. Access to the relevant buckets will be controlled via IAM.**
 
 ### Running the AWS container locally
 
@@ -85,7 +84,7 @@ For these tests to run, you will need:
 Two directories at the same level as `./docker`:
 
 * `source` should contain the files that you want to transform. The directory structure can be as flat or nested as you desire.
-* `out` will contain the finished outputs.
+* `out` will contain the finished outputs, stored within the same directory structure as the source file.
 
 ### Standalone Container Environment Variables:
 
@@ -102,16 +101,18 @@ To process `my_awesome_tei/sample.xml`, you would run the following:
 
     $ export TEI_FILE=my_awesome_tei/sample.xml
     $ docker compose --env-file ./my-local-environment-vars -f compose-aws-dev.yml up --force-recreate --build compose-standalone
+    $ docker compose -f compose-aws-dev.yml down
 
 
 `TEI_FILE` accepts wildcards. The following will transform all sample files:
 
     $ export TEI_FILE=**/*.xml
     $ docker compose --env-file ./my-local-environment-vars -f compose-standalone.yml  up --force-recreate --build
+    $ docker compose -f compose-aws-dev.yml down
 
 You cannot pass multiple files (with paths) to the container. It only accepts a single file or wildcards.
 
-If the `TEI_FILE` environment variable is not set, the container will assume that you want to process all files (**/*.xml) in `./source`.
+If the `TEI_FILE` environment variable is not set, the container will assume that you want to process all files (`**/*.xml`) in `./source`.
 
 ## Building the lambda for deployment in AWS
 
