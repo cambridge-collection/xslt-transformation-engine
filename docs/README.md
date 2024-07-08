@@ -59,10 +59,13 @@ The AWS Lambda responds to SQS messages. To transform a file, you need to submit
 
     $ curl -X POST -H 'Content-Type: application/json' 'http://localhost:9000/2015-03-31/functions/function/invocations' --data-binary "@./path/to/my-sqs-notification.json"
 
+### Stopping the container
 
-### Test Messages
+Run `docker compose -f compose-aws-dev.yml down`.
 
-The `test` directory contains three sample notifications. All three will need to be customised with your source bucket name and sample TEI file name as per the instructions below:
+## Test Messages for locally-running AWS dev and AWS Lambda
+
+The `test` directory contains three sample notifications. These notifications can be used to test the functioning of both an AWS dev instance running locally and in an actual AWS lambda. All three will need to be customised with your source bucket name and sample TEI file name as per the instructions below:
 
 1. `tei-source-changed.json` triggers the XSLT transformation process by notifying the lambda that the TEI resource mentioned within it has been changed.
 2. `./test/tei-source-removed.json` simulates the removal of the TEI item from the source bucket. It purges all its derivative files from the output bucket.
@@ -70,12 +73,11 @@ The `test` directory contains three sample notifications. All three will need to
 
 For these tests to run, you will need:
 
-1. Source and destinations buckets that your shell can access using the AWS credentials stored in env variables (as outlined [above](#aws-environment-variables)). The name of the destination bucket must be set in `AWS_OUTPUT_BUCKET`.
+1. Ensure that the container has been set up properly with the required environment variables. It will also need to be able to access your source and destination buckets. If testing a local aws dev instance, your shell will need [AWS credentials stored in env variables](#aws-environment-variables). If you are testing an actual AWS lambda, it will need to have appropriate IAM access to the buckets.
 2. The source bucket should contain at least one TEI file.
 3. Modify the test events so that they refer to those buckets and your TEI file, replacing:
    - `my-most-awesome-source-b5cf96c0-e114` with your source bucket's name.
    - `my_awesome_tei/sample.xml` with the `full/path/to/yourteifile.xml`.
-
 
 ## Instructions for running the standalone container
 
@@ -100,15 +102,16 @@ You must specify the file you want to process using the environment variable `TE
 To process `my_awesome_tei/sample.xml`, you would run the following:
 
     $ export TEI_FILE=my_awesome_tei/sample.xml
-    $ docker compose --env-file ./my-local-environment-vars -f compose-aws-dev.yml up --force-recreate --build compose-standalone
-    $ docker compose -f compose-aws-dev.yml down
-
+    $ docker compose --env-file ./my-local-environment-vars -f compose-standalone.yml up --force-recreate --build
 
 `TEI_FILE` accepts wildcards. The following will transform all sample files:
 
     $ export TEI_FILE=**/*.xml
     $ docker compose --env-file ./my-local-environment-vars -f compose-standalone.yml  up --force-recreate --build
-    $ docker compose -f compose-aws-dev.yml down
+
+### Stopping the container
+
+Run `docker compose -f compose-standalone.yml down`.
 
 You cannot pass multiple files (with paths) to the container. It only accepts a single file or wildcards.
 
