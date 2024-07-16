@@ -27,6 +27,16 @@ Both versions require additional specific environment parameters, but the follow
 
 See [AWS Environment variables](#aws-environment-variables) and [Standalone Container variables](#standalone-container-environment-variables)
 
+Docker will build the local testing images for the architecture of your local machine (unless you have overridden it with the environment variable `DOCKER_DEFAULT_PLATFORM`). This means that your local implementations should run at their maximum speed.
+
+If you intend to roll out an image onto a live AWS Lambda, you need to build it for `linux/amd64`. You can do this by setting `DOCKER_DEFAULT_PLATFORM` before building the continer:
+
+    $ export DOCKER_DEFAULT_PLATFORM= linux/amd64
+
+The container will run a little slower if this isn't your native architecture because it'll be in emulation mode.
+
+For instructions on building a Linux/amd64 image for release, see the instructions for [building the lambda for deployment in AWS](#building-the-lambda-for-deployment-in-aws).
+
 ## Instructions for running the AWS Lambda Development version locally
 
 ### AWS Environment Variables
@@ -121,6 +131,8 @@ If the `TEI_FILE` environment variable is not set, the container will assume tha
 
     $ docker build -t cdcp-xslt-transformation-engine --platform linux/amd64 .
 
+Be sure to include `--platform linux/amd64` otherwise Docker will build the image for your specific platform architecture unless you have specifically overridden it with the `DOCKER_DEFAULT_PLATFORM` environment variable. The live AWS Lambda needs the `linux/amd64` image.
+ 
 ## Creating your own transformation scenario
 
 For instructions on how to create your own transformation scenario, see <https://github.com/cambridge-collection/xslt-transformation-engine-scenario-template>
