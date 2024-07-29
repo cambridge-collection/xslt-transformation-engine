@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.0.15](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.0.14...v1.0.15) (2024-07-29)
+
+
+### Bug Fixes
+
+* apply defaults for key unset env vars ([6b33445](https://github.com/cambridge-collection/xslt-transformation-engine/commit/6b33445cb18caabd29515cb5506a9a0f2801792b))
+* ensure script fails with any problem ([9e4a6f9](https://github.com/cambridge-collection/xslt-transformation-engine/commit/9e4a6f9a784d2b2079201b535ed00ba9848548e7))
+* remove unused var ([fbf1ab1](https://github.com/cambridge-collection/xslt-transformation-engine/commit/fbf1ab1d40b25fa8130f1e20fdd3adbcf86037fd))
+
 ## [1.0.14](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.0.13...v1.0.14) (2024-07-16)
 
 
