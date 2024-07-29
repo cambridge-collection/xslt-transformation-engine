@@ -1,5 +1,6 @@
 #! /bin/sh
 
+set -euo pipefail
 
 # Set defaults for lambda for certain unset ENV vars:
 set -a
