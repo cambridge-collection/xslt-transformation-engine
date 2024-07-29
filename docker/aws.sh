@@ -8,8 +8,6 @@
 
 set -euo pipefail
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-
 function clean_source_workspace() {
 	echo "$1" 1>&2 &&
 		rm -rf "/tmp/opt/cdcp/source" 1>&2 &&
