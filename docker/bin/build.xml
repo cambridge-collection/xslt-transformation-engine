@@ -8,14 +8,14 @@
     <property name="ENVIRONMENT" value="${env.ENVIRONMENT}"/>
 
     <!-- The following switches can be passed when invoking ant to provide custom values -->
-    <property name="data.dir"  value="./source"/><!-- Source of the original data files -->
-    <property name="dist.dir"  value="./out"/><!-- Final dist dir (standalone build only) -->
+    <property name="data.dir"  location="./source"/><!-- Source of the original data files -->
+    <property name="dist.dir"  location="./out"/><!-- Final dist dir (standalone build only) -->
 
-    <property name="dist-pending.dir"  value="./dist-pending"/><!-- Initial output directory -->
+    <property name="dist-pending.dir"  location="./dist-pending"/><!-- Initial output directory -->
     <property name="files-to-process" value="*.xml"/><!-- File(s) to build -->
 
-    <property name="tmp.dir"  value="./tmp"/><!-- Target directory for the TEI XML page extract files -->
-    <property name="dev.null"  value="./dev.null"/><!-- Destination directory for empty junk files created by ant's xslt task when running pagify.xsl -->
+    <property name="tmp.dir"  location="./tmp"/><!-- Target directory for the TEI XML page extract files -->
+    <property name="dev.null"  location="./dev.null"/><!-- Destination directory for empty junk files created by ant's xslt task when running pagify.xsl -->
 
     <!-- Final S3 Destinations -->
     <property name="AWS_OUTPUT_BUCKET" value="${env.AWS_OUTPUT_BUCKET}"/>
@@ -24,11 +24,6 @@
     <property name="XSLT_ENTRYPOINT" value="${env.XSLT_ENTRYPOINT}"/>
     <property name="OUTPUT_EXTENSION" value="${env.OUTPUT_EXTENSION}"/>
     <property name="EXPAND_DEFAULT_ATTRIBUTES" value="${env.EXPAND_DEFAULT_ATTRIBUTES}"/>
-
-    <!-- FULL PATHS -->
-    <dirname property="fullpath.to.basedir" file="${dist-pending.dir}"/>
-    <property name="fullpath.to.data.dir"  value="${fullpath.to.basedir}/${data.dir}"/>
-    <property name="fullpath.to.dist.pending" value="${fullpath.to.basedir}/${dist-pending.dir}"/>
 
     <!-- Comprehensive builds -->
 
@@ -115,7 +110,7 @@
         <echo unless:true="${prehook.present}">No pre.hook</echo>
 
         <exec if:true="${prehook.present}" executable="/var/task/pre.sh" resolveexecutable="true" failonerror="true">
-            <arg value="${fullpath.to.data.dir}"/>
+            <arg value="${data.dir}"/>
             <arg value="${files-to-process}"/>
         </exec>
     </target>
@@ -130,7 +125,7 @@
         <echo unless:true="${posthook.present}">No post.hook</echo>
 
         <exec if:true="${posthook.present}" executable="/var/task/post.sh" resolveexecutable="true" failonerror="true">
-            <arg value="${fullpath.to.dist.pending}"/>
+            <arg value="${dist-pending.dir}"/>
             <arg value="${files-to-process}"/>
         </exec>
     </target>
