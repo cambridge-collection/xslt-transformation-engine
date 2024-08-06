@@ -1,6 +1,8 @@
 # This file is only used for local testing
 # All essential environment variables must be set in the AWS Lambda
 
+INSTANCE_NAME=xslt-transformation-engine
+
 AWS_DEFAULT_REGION=eu-west-1
 
 AWS_OUTPUT_BUCKET=my-most-awesome-output-06f4d9a7-95a3
