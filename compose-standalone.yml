@@ -3,9 +3,10 @@ services:
     build:
       context: ./docker
       dockerfile: Dockerfile
-    container_name: xslt-transformation-engine-standalone
+    container_name: ${INSTANCE_NAME:-xslt-transformation-engine}-standalone
     environment:
       ENVIRONMENT: standalone
+      INSTANCE_NAME: ${INSTANCE_NAME:-xslt-transformation-engine}
       TEI_FILE: ${TEI_FILE:-**/*.xml}
       ANT_BUILDFILE: ${ANT_BUILDFILE:-bin/build.xml}
       ANT_TARGET: ${ANT_TARGET:-full}
