@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.0.15...v1.1.0) (2024-08-06)
+
+
+### Features
+
+* set instance root name with env var ([9425053](https://github.com/cambridge-collection/xslt-transformation-engine/commit/942505315326fc7376148d64f81e8ae9efe47ddd))
+
+
+### Bug Fixes
+
+* change relative paths in properties to absolute paths ([ab1979f](https://github.com/cambridge-collection/xslt-transformation-engine/commit/ab1979f4f273f62a83307f96cc1ae88f2498e0a2))
+
 ## [1.0.15](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.0.14...v1.0.15) (2024-07-29)
 
 
