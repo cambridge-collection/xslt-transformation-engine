@@ -68,7 +68,7 @@ jobs:
 
       - name: Build and push image
         uses: docker/build-push-action@v6
-        if: ${{ contains(steps.version.outputs.new_release_version, '.') }}
+        if: ${{ new_release_published }}
         with:
           context: "{{defaultContext}}:docker"
           platforms: linux/amd64,linux/arm64
