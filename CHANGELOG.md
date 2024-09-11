@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.2](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.1.1...v1.1.2) (2024-09-11)
+
+
+### Bug Fixes
+
+* use aws-supplied installer for awscli ([085b2a4](https://github.com/cambridge-collection/xslt-transformation-engine/commit/085b2a4b6db273deb7f946e0fa2bee534bf54efb))
+
 ## [1.1.1](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.1.0...v1.1.1) (2024-08-06)
 
 ## [1.1.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.0.15...v1.1.0) (2024-08-06)
