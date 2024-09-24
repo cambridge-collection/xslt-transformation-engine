@@ -22,11 +22,11 @@ RUN wget --no-check-certificate --no-cookies "https://dlcdn.apache.org//ant/bina
 
 # Download Saxon jar -- can't find checksum files for releases
 RUN mkdir saxon \
-    && wget --no-check-certificate --no-cookies "https://github.com/Saxonica/Saxon-HE/releases/download/SaxonHE12-4/SaxonHE12-4J.zip" \
-    && unzip SaxonHE12-4J.zip -d saxon \
+    && wget --no-check-certificate --no-cookies "https://github.com/Saxonica/Saxon-HE/releases/download/SaxonHE12-5/SaxonHE12-5J.zip" \
+    && unzip SaxonHE12-5J.zip -d saxon \
     && mv saxon /opt/
 
-ENV CLASSPATH=/opt/saxon/saxon-he-12.4.jar
+ENV CLASSPATH=/opt/saxon/saxon-he-12.5.jar
 
 COPY bootstrap ${LAMBDA_RUNTIME_DIR}
 RUN chmod 755 ${LAMBDA_RUNTIME_DIR}/bootstrap
