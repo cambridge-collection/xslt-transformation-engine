@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.3.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.2.0...v1.3.0) (2024-09-24)
+
+
+### Features
+
+* update saxon ([8e9a60d](https://github.com/cambridge-collection/xslt-transformation-engine/commit/8e9a60dd5e058fdfd07c673b9fcf622fa9b1fbe2))
+
 ## [1.2.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.1.2...v1.2.0) (2024-09-11)
 
 
