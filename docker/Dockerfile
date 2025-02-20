@@ -2,7 +2,7 @@ FROM public.ecr.aws/lambda/provided:al2
 
 ARG TARGETARCH
 
-ENV ANT_VERSION=1.10.14
+ENV ANT_VERSION=1.10.15
 ENV ANT_HOME=/opt/ant
 
 RUN yum install -y wget tar gzip unzip java jq
