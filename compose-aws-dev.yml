@@ -18,5 +18,6 @@ services:
       OUTPUT_EXTENSION: ${OUTPUT_EXTENSION:-html}
       ALLOW_DELETE: ${ALLOW_DELETE:-false}
       EXPAND_DEFAULT_ATTRIBUTES: ${EXPAND_DEFAULT_ATTRIBUTES:-false}
+      ANT_LOG_LEVEL: ${ANT_LOG_LEVEL:-default}
     ports:
       - 9000:8080
