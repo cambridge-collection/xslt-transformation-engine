@@ -2,41 +2,35 @@
 
 This repository provides a dockerised version of the core infrastructure for performing XSLT Transformations by the [Cambridge Digital Collection Platform](https://cambridge-collection.github.io/tei-data-processing-overview). It runs as either:
 
-* an AWS lambda that responds to an SQS notification informing it of a file change to source file in an S3 bucket. The results are output into the S3 bucket defined by the `AWS_OUTPUT_BUCKET` environment variable. While this version is only capable of handling one file at a time, you can scale the number of lambdas so that it can handle hundreds of requests files at once.
-* a standalone build suitable for running locally or within a CI/CD system. It acts upon any number of items contained within the `./source` dir. The outputs are copied to `./out`.
+* an AWS Lambda that responds to an SQS notification informing it of a file change in an S3 bucket. The results are copied to the output S3 bucket defined by `AWS_OUTPUT_BUCKET`. While a single invocation processes one file at a time, you can scale the number of Lambdas to handle many files concurrently.
+* a standalone build suitable for running locally or within a CI/CD system. It acts upon any number of items contained within the `./source` dir and writes outputs to `./out`.
 
 ## Sample Implementation
 
-A sample implementation of an XSLT transformation scenario is included. It contains two TEI documents and XSLT that provides a minimum viable product implementation of a TEI to HTML transformation. It is only intended to test that the platform is working. It should **not** be used for production as it only deals four elements.
+A sample implementation of an XSLT transformation scenario is included. It contains TEI documents and an example XSLT providing a minimal TEI to HTML transformation to validate the platform. It is not suitable for production.
 
 ## Prerequisites
 
 - Docker [https://docs.docker.com/get-docker/].
 
-## Required Environment Variables for both AWS and standalone versions
+## Required Environment Variables (common to AWS and standalone)
 
 Both versions require additional specific environment parameters, but the following are common to both:
 
-| Variable Name                | Description                                                                                                                                                                                                                                                                                                                                            | Default value if not set in container |
-|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------|
-| `ENVIRONMENT`                | *[Required]* Environment type for the build. It should be either `aws-dev` or `standalone`.                                                                                                                                                                                                                                                            |                                       |
-| `INSTANCE_NAME`              | *[Recommended]* Root name for the deployed container(s). `-standalone` and `-aws-dev` will be appended to it depending on which compose file you use.                                                                                                                                                                                                  | `xslt-transformation-engine`          |
-| `ANT_BUILDFILE`              | *[Optional]* Buildfile to use                                                                                                                                                                                                                                                                                                                          | `bin/build.xml`                       |
-| `XSLT_ENTRYPOINT`            | *[Required]* Path to the XSLT file to use for the transformation. The path is relative to the `docker` directory. The default XSLT **is not** suitable for anything more than testing that the environment is working.                                                                                                                                 | `xslt/TEI-to-HTML.xsl`                |
-| `OUTPUT_EXTENSION`           | *[Required]* Extension for the output file(s). Accepts the values `html` and `xml`.                                                                                                                                                                                                                                                                    | `html`                                |
-| `EXPAND_DEFAULT_ATTRIBUTES`  | *[Optional]* Determines whether default attribute values defined in the schema or DTD are inserted into the output document during the transformation. This is expected behaviour but it might not be the desired behaviour when performing an identity transform intended to permanently alter the source file. Accepts the values: `true` or `false` | `false`                               |
+| Variable Name               | Description                                                                                                                                                                                                                                                                                                                                             | Default |
+|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
+| `ENVIRONMENT`               | Environment type for the build. Use `aws-dev` (local Lambda dev) or `standalone`.                                                                                                                                                                                                                                                                       |         |
+| `INSTANCE_NAME`             | Root name for the deployed container(s). `-standalone` and `-aws-dev` are appended by compose files.                                                                                                                                                                                                                                                  | `xslt-transformation-engine` |
+| `ANT_BUILDFILE`             | Ant buildfile path (relative to container working dir).                                                                                                                                                                                                                                                                                                | `bin/build.xml` |
+| `ANT_TARGET`                | Ant target to execute. The default buildfile’s main entrypoint is `full`.                                                                                                                                                                                                                                                                                | `full`  |
+| `XSLT_ENTRYPOINT`           | Path to the XSLT entry stylesheet (relative to the image’s `xslt/` directory). The default XSLT is demo‑only.                                                                                                                                                                                                                                         | `xslt/TEI-to-HTML.xsl` |
+| `OUTPUT_EXTENSION`          | Output file extension for transformed results. Typically `html` or `xml`.                                                                                                                                                                                                                                                                                | `html`  |
+| `EXPAND_DEFAULT_ATTRIBUTES` | Whether to expand default attribute values defined by the schema during transformation. Set `true` to enable.                                                                                                                                                           | `false` |
+| `ANT_LOG_LEVEL`             | Controls Ant build verbosity. Supported values: `warn` (messages without a level or one set to `error` or `warn`), `default` (all the messages specified previously in `warn` along with those flagged `info`), `verbose` (everything described in `default` plus messages flagged `verbose`), `debug` (everything described in `verbose` along with messages flagged as `debug`). Values are case‑insensitive.                                                                                                           | `default` |
 
-See [AWS Environment variables](#aws-environment-variables) and [Standalone Container variables](#standalone-container-environment-variables)
+See [AWS Environment variables](#aws-environment-variables) and [Standalone container environment variables](#standalone-container-environment-variables).
 
-Docker will build the local testing images for the architecture of your local machine (unless you have overridden it with the environment variable `DOCKER_DEFAULT_PLATFORM`). This means that your local implementations should run at their maximum speed.
-
-If you intend to roll out an image onto a live AWS Lambda, you need to build it for `linux/amd64`. You can do this by setting `DOCKER_DEFAULT_PLATFORM` before building the continer:
-
-    $ export DOCKER_DEFAULT_PLATFORM= linux/amd64
-
-The container will run a little slower if this isn't your native architecture because it'll be in emulation mode.
-
-For instructions on building a Linux/amd64 image for release, see the instructions for [building the lambda for deployment in AWS](#building-the-lambda-for-deployment-in-aws).
+Docker builds local test images for your host architecture (unless overridden with `DOCKER_DEFAULT_PLATFORM`). For AWS Lambda deployment, build for `linux/amd64`. See [building the lambda for deployment in AWS](#building-the-lambda-for-deployment-in-aws).
 
 ## Instructions for running the AWS Lambda Development version locally
 
@@ -44,18 +38,18 @@ For instructions on building a Linux/amd64 image for release, see the instructio
 
 The following environment variables are needed in addition to the [Required Environment Variables for both AWS and standalone versions](#required-environment-variables-for-both-aws-and-standalone-versions):
 
-| Variable Name       | Description                                                                                                                                                                                          | Default value |
-|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| `AWS_OUTPUT_BUCKET` | *[Required]* Name of the output S3 bucket                                                                                                                                                            |               |
-| `ALLOW_DELETE`      | *[Optional]* Determines whether the lambda will deleted generated outputs of the file in `AWS_OUTPUT_BUCKET`. It accepts the values `true` or `false`. _This feature is currently not implemented. _ | `false`       |
+| Variable Name        | Description                                                                                                                                                                                                                                           | Default |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
+| `AWS_OUTPUT_BUCKET`  | Name of the output S3 bucket that receives transformed files.                                                                                                                                                                                         |         |
+| `ALLOW_DELETE`       | When `true` and the event is an S3 `ObjectRemoved*`, the Lambda computes the matching outputs and deletes the output resources in `AWS_OUTPUT_BUCKET` (*Not Currently implemented*).                                                                  | `false` |
 
-You will also need the necessary AWS credentials stored in the following environment variables to run AWS locally for development:
+You will also need AWS credentials (for local dev only) in environment variables:
 
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
-- `AWS_SECRET_ACCESS_KEY`
+- `AWS_SESSION_TOKEN` (if using temporary credentials)
 
-**Do not set (or use) these variables when running in an AWS lambda. Access to the relevant buckets will be controlled via IAM.**
+Do not set these when running inside AWS Lambda; access is controlled via IAM roles.
 
 ### Running the AWS container locally
 
@@ -66,7 +60,7 @@ You will also need the necessary AWS credentials stored in the following environ
 
 ### Processing a file
 
-The AWS Lambda responds to SQS messages. To transform a file, you need to submit a JSON file with the SQS structure with a `POST` request to `http://localhost:9000/2015-03-31/functions/function/invocations`:
+The AWS flavor responds to SQS‑shaped events. To transform a file, submit a JSON file with the SQS envelope to `http://localhost:9000/2015-03-31/functions/function/invocations`:
 
     $ curl -X POST -H 'Content-Type: application/json' 'http://localhost:9000/2015-03-31/functions/function/invocations' --data-binary "@./path/to/my-sqs-notification.json"
 
@@ -99,12 +93,13 @@ Two directories at the same level as `./docker`:
 * `source` should contain the files that you want to transform. The directory structure can be as flat or nested as you desire.
 * `out` will contain the finished outputs, stored within the same directory structure as the source file.
 
-### Standalone Container Environment Variables:
+### Standalone container environment variables
 
-| Variable Name | Description                                 | Default value |
-|---------------|---------------------------------------------|---------------|
-| ENVIRONMENT   | *[Required]* Environment type for the build | `standalone`  |
-| TEI_FILE      | *[Required]* TEI file(s) to process         | `**/*.xml`    |
+| Variable Name        | Description                                                                                                       | Default      |
+|----------------------|-------------------------------------------------------------------------------------------------------------------|--------------|
+| `ENVIRONMENT`        | Environment type for the build                                                                                    | `standalone` |
+| `TEI_FILE`           | Glob of TEI file(s) to process, relative to `./source`                                                            | `**/*.xml`   |
+| `CHANGED_FILES_FILE` | Optional path to a newline‑delimited list of source files (relative to `./source`). Takes precedence over `TEI_FILE`. |              |
 
 ### Building the container and processing data
 
@@ -115,22 +110,57 @@ To process `my_awesome_tei/sample.xml`, you would run the following:
     $ export TEI_FILE=my_awesome_tei/sample.xml
     $ docker compose --env-file ./my-local-environment-vars -f compose-standalone.yml up --force-recreate --build
 
-`TEI_FILE` accepts wildcards. The following will transform all sample files:
+#### Specifying the files to be transformed
 
-    $ export TEI_FILE=**/*.xml
+There are two environment variables you can use to specify which files to transform: `TEI_FILE` and `CHANGED_FILES_FILE`. Set only one of these for a given run.
+
+##### `TEI_FILE`
+
+Use `TEI_FILE` to specify files or globs relative to `./source`. It accepts a single glob or multiple newline‑delimited paths.
+
+Transform all sample files:
+
+    $ export TEI_FILE='**/*.xml'
     $ docker compose --env-file ./my-local-environment-vars -f compose-standalone.yml  up --force-recreate --build
+
+Transform two specific files:
+    $ export TEI_FILE="$(printf '%s\n%s' 'my_awesome_tei/hello-world.xml' 'my_awesome_tei/sample2.xml')"
+    $ docker compose --env-file ./my-local-environment-vars -f compose-standalone.yml  up --force-recreate --build
+
+##### `CHANGED_FILES_FILE`
+
+Provide the path to a newline‑delimited text file (LF or CRLF) in the container that lists the source files to transform, relative to `./source`. This is typically used in CI/CD to process only modified files. When set, it takes precedence over `TEI_FILE`.
+
+
+#### Pre and Post hook scripts
+
+The default build supports optional hooks to run scripts before (`pre.sh`) and after (`post.sh`) the transformation to inject custom behaviour. These scripts are automatically run using the default ant buildfile.
+
+These scripts must be placed within the `./docker` directory in order to run during the transformation scenario. They are called with three arguments
+
+  - `pre.sh`: `<data.dir> --includes-file <path> | --pattern <glob>`
+  - `post.sh`: `<dist-pending.dir> --includes-file <path> | --pattern <glob>`
+
+
+  - `<data.dir>`: directory containing the source files (typically `./source`).
+  - `<dist-pending.dir>`: directory containing freshly generated outputs.
+  - `--includes-file <path>`: newline‑delimited file list (LF/CRLF), paths relative to `<data.dir>`.
+  - `--pattern <glob>`: glob pattern to resolve relative to the provided directory.
+
+  Legacy Behaviour: If called with a single second argument (no flags), the hooks auto‑detect a readable file as an includes file; otherwise treat it as a pattern.
+
+
+- Standalone vs AWS:
+  - Standalone uses `--includes-file /tmp/opt/cdcp/includes.txt`, which is automatically generated from `TEI_FILE` or `CHANGED_FILES_FILE`.
+  - AWS uses `--pattern <tei/key.xml>` (the S3 object key of the TEI), not an includes file.
 
 ### Stopping the container
 
-Run `docker compose -f compose-standalone.yml down`.
-
-You cannot pass multiple files (with paths) to the container. It only accepts a single file or wildcards.
-
-If the `TEI_FILE` environment variable is not set, the container will assume that you want to process all files (`**/*.xml`) in `./source`.
+    $ docker compose -f compose-standalone.yml down`.
 
 ## Building the lambda for deployment in AWS
 
-    $ docker build -t cdcp-xslt-transformation-engine --platform linux/amd64 .
+    $ docker build -t cdcp-xslt-transformation-engine --platform linux/amd64 -f docker/Dockerfile docker
 
 Be sure to include `--platform linux/amd64` otherwise Docker will build the image for your specific platform architecture unless you have specifically overridden it with the `DOCKER_DEFAULT_PLATFORM` environment variable. The live AWS Lambda needs the `linux/amd64` image.
 
@@ -138,3 +168,10 @@ Be sure to include `--platform linux/amd64` otherwise Docker will build the imag
 
 For instructions on how to create your own transformation scenario, see <https://github.com/cambridge-collection/xslt-transformation-engine-scenario-template>
 
+## Implementation details
+
+- Base image: `public.ecr.aws/lambda/provided:al2023` with a custom Lambda bootstrap (`docker/bootstrap`).
+- Java: Amazon Corretto; Saxon‑HE installed at `/opt/saxon` and exposed on `CLASSPATH`.
+- Ant: Installed under `/opt/ant`; default buildfile is `docker/bin/build.xml`.
+- Working dirs: transformations run from `/tmp/opt/cdcp` to accommodate Lambda filesystem constraints.
+- AWS CLI: Installed for S3 sync operations and local testing.
