@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.5.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.4.0...v1.5.0) (2025-09-10)
+
+
+### Features
+
+* improve stability and performance of image and scripts ([953880d](https://github.com/cambridge-collection/xslt-transformation-engine/commit/953880da903f5d753385f7cb7c42c49e89993807))
+
 ## [1.4.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.3.0...v1.4.0) (2025-02-20)
 
 
