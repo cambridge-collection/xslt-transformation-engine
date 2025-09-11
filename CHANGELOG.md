@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.5.1](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.5.0...v1.5.1) (2025-09-11)
+
+
+### Bug Fixes
+
+* add missing CHANGED_FILES_FILE in standalone and document ([39efa47](https://github.com/cambridge-collection/xslt-transformation-engine/commit/39efa47901db6dffbfeb0900452b7424394a0a8b))
+* remove filelist files ([08d3d8c](https://github.com/cambridge-collection/xslt-transformation-engine/commit/08d3d8cf45496f2426f2e0ce715b20fd16ec8c63))
+
 ## [1.5.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.4.0...v1.5.0) (2025-09-10)
 
 
