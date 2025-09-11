@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<antlib
+    xmlns:antlib="antlib:org.apache.tools.ant"
+    xmlns:if="ant:if"
+    xmlns:unless="ant:unless">
+
+    <!--
+      Macro: select-files
+      - Computes includes_file_present based on an includes file path
+      - Defines a fileset with either includesfile or a glob pattern
+
+      Attributes:
+        dir          : Base directory for fileset
+        pattern      : Glob for files when includes file is absent (default: *.xml)
+        includes_file: Path to includes file (default matches current build's default)
+        filesetid    : ID to assign to the created fileset (default: original_xml)
+    -->
+    <macrodef name="select-files">
+        <attribute name="dir"/>
+        <attribute name="pattern" default="*.xml"/>
+        <attribute name="includesFile" default="/tmp/opt/cdcp/includes.txt"/>
+        <attribute name="filesetId" default="original_xml"/>
+        <sequential>
+            <!-- Determine if the includes file exists -->
+            <available file="@{includesFile}" property="includes_file_present"/>
+
+            <!-- Define the fileset for downstream tasks -->
+            <fileset id="@{filesetId}" dir="@{dir}">
+                <patternset>
+                    <includesfile name="@{includesFile}" if:true="${includes_file_present}"/>
+                    <include name="@{pattern}" unless:true="${includes_file_present}"/>
+                </patternset>
+            </fileset>
+        </sequential>
+    </macrodef>
+
+</antlib>

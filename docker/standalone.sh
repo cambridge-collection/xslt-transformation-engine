@@ -55,4 +55,4 @@ case "${ANT_LOG_LEVEL}" in
         ;;
 esac
 
-/opt/ant/bin/ant ${ANT_LOG_FLAG} -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} $ANT_TARGET -Dincludes_file="$includes_file"
+/opt/ant/bin/ant ${ANT_LOG_FLAG} -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} -lib /opt/cdcp/bin/xte/lib/antlib.xml $ANT_TARGET -Dincludes_file="$includes_file"
