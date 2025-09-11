@@ -17,19 +17,6 @@ services:
       EXPAND_DEFAULT_ATTRIBUTES: ${EXPAND_DEFAULT_ATTRIBUTES:-false}
       ANT_LOG_LEVEL: ${ANT_LOG_LEVEL:-default}
     volumes:
-      - out:/tmp/opt/cdcp/out
-      - source:/tmp/opt/cdcp/source
+      - ./out:/tmp/opt/cdcp/out:rw
+      - ./source:/tmp/opt/cdcp/source:rw
     entrypoint: [ "bash", "-lc", "/var/task/standalone.sh" ]
-volumes:
-  out:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: ./out
-  source:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: ./source
