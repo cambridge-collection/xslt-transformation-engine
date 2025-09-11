@@ -7,6 +7,7 @@
 
     <property environment="env"/>
     <property name="ENVIRONMENT" value="${env.ENVIRONMENT}"/>
+    <property name="ANT_LOG_LEVEL" value="${env.ANT_LOG_LEVEL}"/>
 
     <!-- Load reusable xte macros -->
     <typedef file="${basedir}/bin/xte/lib/antlib.xml" uri="antlib:cudl.fs"/>
