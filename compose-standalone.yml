@@ -8,6 +8,7 @@ services:
       ENVIRONMENT: standalone
       INSTANCE_NAME: ${INSTANCE_NAME:-xslt-transformation-engine}
       TEI_FILE: "${TEI_FILE:-**/*.xml}"
+      CHANGED_FILES_FILE: ${CHANGED_FILES_FILE:-}
       ANT_BUILDFILE: ${ANT_BUILDFILE:-bin/build.xml}
       ANT_TARGET: ${ANT_TARGET:-full}
       XSLT_ENTRYPOINT: ${XSLT_ENTRYPOINT:-xslt/TEI-to-HTML.xsl}
