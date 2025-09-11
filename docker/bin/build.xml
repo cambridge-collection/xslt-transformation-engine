@@ -45,26 +45,12 @@
         <!-- Compute includes_file_present and define fileset -->
         <fs:select-files dir="${data.dir}" pattern="${files-to-process}" includesFile="${includes_file}" filesetId="original_xml"/>
 
-        <echo level="info" message="INFO: Transforming list from ${includes_file} using ${XSLT_ENTRYPOINT}" if:true="${includes_file_present}"/>
-        <echo level="info" message="INFO: Transforming files matching '${files-to-process}' using ${XSLT_ENTRYPOINT}" unless:true="${includes_file_present}"/>
-
-        <echo level="info" message="INFO: No expansion of default attributes defined in the schema" unless:true="${expand-default-attributes}"/>
-        <echo level="info" message="INFO: Default attributes defined in the schema expanded" if:true="${expand-default-attributes}"/>
-
-        <xslt destdir="${dist-pending.dir}" style="./${XSLT_ENTRYPOINT}" force="true" useimplicitfileset="false" extension=".${OUTPUT_EXTENSION}" reloadstylesheet="true" unless:true="${expand-default-attributes}">
-            <fileset refid="original_xml"/>
-            <factory name="net.sf.saxon.BasicTransformerFactory">
-                <attribute name="http://saxon.sf.net/feature/xinclude-aware" value="true"/>
-                <attribute name="http://saxon.sf.net/feature/expandAttributeDefaults" value="off"/>
-            </factory>
-        </xslt>
-
-        <xslt destdir="${dist-pending.dir}" style="./${XSLT_ENTRYPOINT}" force="true" useimplicitfileset="false" extension=".${OUTPUT_EXTENSION}" reloadstylesheet="true" if:true="${expand-default-attributes}">
-            <fileset refid="original_xml"/>
-            <factory name="net.sf.saxon.BasicTransformerFactory">
-                <attribute name="http://saxon.sf.net/feature/xinclude-aware" value="true"/>
-            </factory>
-        </xslt>
+        <fs:xslt-transform filesetrefid="original_xml" 
+                           xslt="./${XSLT_ENTRYPOINT}" 
+                           extension=".${OUTPUT_EXTENSION}"
+                           dest="${dist-pending.dir}"
+                           expand-default-attributes="${expand-default-attributes}" />
+    
     </target>
 
      <!-- Private tasks called from main tasks -->

@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<antlib
-    xmlns:antlib="antlib:org.apache.tools.ant"
-    xmlns:if="ant:if"
-    xmlns:unless="ant:unless">
+<antlib xmlns:antlib="antlib:org.apache.tools.ant" xmlns:if="ant:if" xmlns:unless="ant:unless">
 
     <!--
       Macro: select-files
@@ -34,4 +31,76 @@
         </sequential>
     </macrodef>
 
+    <!--
+      Macro: xslt-transform
+      - Transforms files from a fileset using a given XSLT
+      - Optionally expands schema default attributes via Saxon feature
+
+      Attributes:
+        dest                   : Destination directory for transformed output
+        xslt                   : Path to the XSLT stylesheet entrypoint
+        extension              : Output file extension (e.g., .xml, .html)
+        filesetrefid           : RefID of the input fileset to transform
+        expand-default-attributes: Toggle expansion of schema default attributes (true/false)
+    -->
+    <macrodef name="xslt-transform">
+        <attribute name="dest"/>
+        <attribute name="xslt"/>
+        <attribute name="extension"/>
+        <attribute name="filesetrefid"/>
+        <attribute name="expand-default-attributes"/>
+
+        <sequential>
+            <fileset id="files" refid="@{filesetrefid}"/>
+
+            <condition property="files.for.processing" value="true" else="false">
+                <length string="${toString:files}" when="greater" length="0"/>
+            </condition>
+
+            <echo level="error" message="ERROR: No files to transform in @{filesetrefid}"
+                unless:true="${files.for.processing}"/>
+
+            <sequential if:true="${files.for.processing}">
+                <echo level="info" message="INFO: Using ${XSLT_ENTRYPOINT}"/>
+                
+                <condition property="debug.enabled" value="true" else="false">
+                    <equals arg1="${ANT_LOG_LEVEL}" arg2="debug" trim="true"/>
+                </condition>
+                <sequential if:true="${debug.enabled}">
+                    <pathconvert property="files.list" pathsep=", ">
+                        <resources refid="files"/>
+                    </pathconvert>
+                    <echo level="debug" message="DEBUG: Files: ${files.list}"/>
+                </sequential>
+        
+                <echo level="info" message="INFO: No expansion of default attributes defined in the schema" unless:true="${expand-default-attributes}"/>
+                <echo level="info" message="INFO: Default attributes defined in the schema expanded" if:true="${expand-default-attributes}"/>
+
+
+                <xslt destdir="@{dest}" style="@{xslt}" force="true" useimplicitfileset="false"
+                    extension="@{extension}" reloadstylesheet="true"
+                    unless:true="@{expand-default-attributes}" failOnError="false"
+                    failOnTransformationError="false">
+                    <fileset refid="@{filesetrefid}"/>
+                    <factory name="net.sf.saxon.BasicTransformerFactory">
+                        <attribute name="http://saxon.sf.net/feature/xinclude-aware" value="true"/>
+                        <attribute name="http://saxon.sf.net/feature/expandAttributeDefaults"
+                            value="off"/>
+                    </factory>
+                    <param name="fragment-output-dir" expression="${fragment-output-dir}"/>
+                </xslt>
+
+                <xslt destdir="@{dest}" style="@{xslt}" force="true" useimplicitfileset="false"
+                    extension="@{extension}" reloadstylesheet="true"
+                    if:true="@{expand-default-attributes}" failOnError="false"
+                    failOnTransformationError="false">
+                    <fileset refid="@{filesetrefid}"/>
+                    <factory name="net.sf.saxon.BasicTransformerFactory">
+                        <attribute name="http://saxon.sf.net/feature/xinclude-aware" value="true"/>
+                    </factory>
+                    <param name="fragment-output-dir" expression="${fragment-output-dir}"/>
+                </xslt>
+            </sequential>
+        </sequential>
+    </macrodef>
 </antlib>
