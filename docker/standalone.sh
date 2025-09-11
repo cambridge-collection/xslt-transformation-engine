@@ -21,6 +21,13 @@ mkdir -p /tmp/opt/cdcp/source
 includes_file="/tmp/opt/cdcp/includes.txt"
 : > "$includes_file"
 
+# Always clean up includes_file; remove CHANGED_FILES_FILE if set
+cleanup() {
+    [ -n "${CHANGED_FILES_FILE:-}" ] && rm -f -- "$CHANGED_FILES_FILE"
+    rm -f -- "$includes_file"
+}
+trap 'cleanup >/dev/null 2>&1 || true' INT TERM EXIT
+
 if [ -n "${CHANGED_FILES_FILE:-}" ] && [ -f "${CHANGED_FILES_FILE}" ]; then
     tr -d '\r' < "${CHANGED_FILES_FILE}" > "$includes_file"
 else
