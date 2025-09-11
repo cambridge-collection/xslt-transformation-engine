@@ -85,7 +85,7 @@ function handler() {
 	mkdir -p "$(dirname "${TARGET_PATH}")" 1>&2
 	aws s3 cp --quiet "s3://${S3_BUCKET}/${TEI_FILE}" "${TARGET_PATH}" 1>&2 &&
 				echo "Processing ${TEI_FILE}" 1>&2
-			(/opt/ant/bin/ant ${ANT_LOG_FLAG} -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} $ANT_TARGET -Dfiles-to-process="$TEI_FILE") 1>&2 &&
+			(/opt/ant/bin/ant ${ANT_LOG_FLAG} -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} $ANT_TARGET -Dfiles-to-process="$TEI_FILE" -DANT_LOG_LEVEL="$ANT_LOG_LEVEL") 1>&2 &&
 				clean_source_workspace "Cleaning up source workspace" &&
 				echo "OK" 1>&2
 		elif [[ "$EVENTNAME" =~ ^ObjectRemoved && "$DELETE_ENABLED" = true ]]; then
