@@ -8,18 +8,9 @@
       {
         "preset": "conventionalcommits",
         "releaseRules": [
-          {
-            "type": "chore",
-            "release": "patch"
-          },
-          {
-            "type": "docs",
-            "release": "patch"
-          },
-          {
-            "type": "refactor",
-            "release": "patch"
-          }
+          { "type": "build", "release": "patch" },
+          { "type": "revert", "release": "patch" },
+          { "type": "refactor", "release": "patch" }
         ],
         "parserOpts": {
           "noteKeywords": [
@@ -32,7 +23,21 @@
     [
       "@semantic-release/release-notes-generator",
       {
-        "preset": "conventionalcommits"
+        "preset": "conventionalcommits",
+        "presetConfig": {
+          "types": [
+            { "type": "feat", "section": "Features" },
+            { "type": "fix", "section": "Bug Fixes" },
+            { "type": "perf", "section": "Performance" },
+            { "type": "revert", "section": "Reverts" },
+            { "type": "build", "section": "Build System" },
+            { "type": "chore", "section": "Chores" },
+            { "type": "docs", "section": "Documentation" },
+            { "type": "refactor", "section": "Refactoring" },
+            { "type": "test", "section": "Tests" },
+            { "type": "ci", "section": "CI" }
+          ]
+        }
       }
     ],
     [
