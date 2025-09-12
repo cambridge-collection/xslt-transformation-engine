@@ -29,6 +29,44 @@
                 </patternset>
             </fileset>
         </sequential>
+</macrodef>
+
+    <!--
+      Macro: requested-files
+      - Returns a newline-delimited list of requested items.
+      - If an includes file exists, returns its contents verbatim.
+      - Otherwise, if no 'excludes' property is defined, returns files-to-process as-is.
+
+      Attributes:
+        includesFile   : Path to includes file (default matches current build's default)
+        files          : Value for files-to-process fallback (default: ${files-to-process})
+        property       : Property name to set with the newline-delimited result (default: requested.files)
+    -->
+    <macrodef name="requested-files">
+        <attribute name="includesFile" default="/tmp/opt/cdcp/includes.txt"/>
+        <attribute name="files" default="${files-to-process}"/>
+        <attribute name="property" default="requested.files"/>
+        <sequential>
+            <!-- Determine if the includes file exists -->
+            <available file="@{includesFile}" property="rf.includes.exists"/>
+
+            <!-- Determine if an 'excludes' property is present -->
+            <condition property="rf.excludes.exists" value="true" else="false">
+                <isset property="excludes"/>
+            </condition>
+
+            <!-- Prefer includes file contents when present -->
+            <sequential if:true="${rf.includes.exists}">
+                <loadfile property="@{property}" srcFile="@{includesFile}"/>
+            </sequential>
+
+            <!-- Fallback to files-to-process only when 'excludes' is not defined -->
+            <sequential unless:true="${rf.includes.exists}">
+                <sequential unless:true="${rf.excludes.exists}">
+                    <property name="@{property}" value="@{files}"/>
+                </sequential>
+            </sequential>
+        </sequential>
     </macrodef>
 
     <!--
@@ -56,7 +94,7 @@
             <condition property="files.for.processing" value="true" else="false">
                 <length string="${toString:files}" when="greater" length="0"/>
             </condition>
-
+            <echo level="warn" message="${toString:files}"/>
             <echo level="error" message="ERROR: No files to transform in @{filesetrefid}"
                 unless:true="${files.for.processing}"/>
 
