@@ -104,51 +104,19 @@
     </target>
 
     <!-- Handle pre.hook -->
-    <target name="run.prehook" depends="check-prehook">
-        <fs:select-files dir="${data.dir}" pattern="${files-to-process}" includesFile="${includes_file}" filesetId="prehook_fs"/>
-        <echo level="info" if:true="${prehook.present}">INFO: Running pre.hook</echo>
-        <echo level="info" unless:true="${prehook.present}">INFO: No pre.hook</echo>
-
-        <tempfile if:true="${prehook.present}" property="prehook.includes.file" destdir="${java.io.tmpdir}" prefix="includes-pre-" suffix=".txt" deleteonexit="true"/>
-        <pathconvert if:true="${prehook.present}" property="prehook.list" pathsep="&#10;">
-            <fileset refid="prehook_fs"/>
-        </pathconvert>
-        <echo if:true="${prehook.present}" file="${prehook.includes.file}" message="${prehook.list}"/>
-
-        <exec if:true="${prehook.present}" executable="/var/task/pre.sh" resolveexecutable="true" failonerror="true">
-            <arg value="${data.dir}"/>
-            <arg value="--includes-file"/>
-            <arg value="${prehook.includes.file}"/>
-        </exec>
-        <delete if:true="${prehook.present}" file="${prehook.includes.file}" quiet="true"/>
-    </target>
-
-    <target name="check-prehook">
-        <available file="/var/task/pre.sh" property="prehook.present" value="true"/>
+    <target name="run.prehook">
+        <run-hook
+            label="pre"
+            script="/var/task/pre.sh"
+            argdir="${data.dir}"/>
     </target>
 
     <!-- Handle post.hook -->
-    <target name="run.posthook" depends="check-posthook">
-        <fs:select-files dir="${data.dir}" pattern="${files-to-process}" includesFile="${includes_file}" filesetId="posthook_fs"/>
-        <echo level="info" if:true="${posthook.present}">INFO: Running post.hook</echo>
-        <echo level="info" unless:true="${posthook.present}">INFO: No post.hook</echo>
-
-        <tempfile if:true="${posthook.present}" property="posthook.includes.file" destdir="${java.io.tmpdir}" prefix="includes-post-" suffix=".txt" deleteonexit="true"/>
-        <pathconvert if:true="${posthook.present}" property="posthook.list" pathsep="&#10;">
-            <fileset refid="posthook_fs"/>
-        </pathconvert>
-        <echo if:true="${posthook.present}" file="${posthook.includes.file}" message="${posthook.list}"/>
-
-        <exec if:true="${posthook.present}" executable="/var/task/post.sh" resolveexecutable="true" failonerror="true">
-            <arg value="${dist-pending.dir}"/>
-            <arg value="--includes-file"/>
-            <arg value="${posthook.includes.file}"/>
-        </exec>
-        <delete if:true="${posthook.present}" file="${posthook.includes.file}" quiet="true"/>
-    </target>
-
-    <target name="check-posthook">
-        <available file="/var/task/post.sh" property="posthook.present" value="true"/>
+    <target name="run.posthook">
+        <run-hook
+            label="post"
+            script="/var/task/post.sh"
+            argdir="${dist-pending.dir}"/>
     </target>
 
     <target name="cleanup">
@@ -164,5 +132,35 @@
         </retry>
         <mkdir dir="${dist-pending.dir}"/>
     </target>
+
+        <!-- Macro to run pre/post hook scripts with minimal duplication -->
+    <macrodef name="run-hook">
+        <attribute name="label"/><!-- e.g. pre | post (for logging) -->
+        <attribute name="script"/><!-- absolute path to hook script -->
+        <attribute name="argdir"/><!-- directory passed as first arg to script -->
+        <sequential>
+            <!-- Check presence of the hook script -->
+            <available file="@{script}" property="@{label}hook.present" value="true"/>
+
+            <!-- Build fileset from includes and current filter -->
+            <fs:requested-files files="${files-to-process}" includesFile="${includes_file}" property="@{label}hook_fs"/>
+
+            <!-- Informational logging -->
+            <echo level="info" if:true="${@{label}hook.present}">INFO: Running @{label}.hook</echo>
+            <echo level="info" unless:true="${@{label}hook.present}">INFO: No @{label}.hook</echo>
+
+            <!-- Create temp includes file listing selected inputs -->
+            <tempfile if:true="${@{label}hook.present}" property="@{label}hook.includes.file" destdir="${java.io.tmpdir}" prefix="includes-@{label}-" suffix=".txt" deleteonexit="true"/>
+            <echo if:true="${@{label}hook.present}" file="${@{label}hook.includes.file}" message="${@{label}hook_fs}"/>
+
+            <!-- Execute hook script -->
+            <exec if:true="${@{label}hook.present}" executable="@{script}" resolveexecutable="true" failonerror="true">
+                <arg value="@{argdir}"/>
+                <arg value="--includes-file"/>
+                <arg value="${@{label}hook.includes.file}"/>
+            </exec>
+            <delete if:true="${@{label}hook.present}" file="${@{label}hook.includes.file}" quiet="true"/>
+        </sequential>
+    </macrodef>
 
 </project>

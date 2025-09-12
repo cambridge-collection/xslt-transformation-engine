@@ -8,6 +8,7 @@ set -a
 : "${ALLOW_DELETE:=false}"
 : "${EXPAND_DEFAULT_ATTRIBUTES:=false}"
 ANT_LOG_LEVEL="$(printf '%s' "${ANT_LOG_LEVEL:-default}" | tr '[:upper:]' '[:lower:]')"
+SOURCE_DIR="${SOURCE_DIR:=/tmp/opt/cdcp/source}"
 
 set +a
 
@@ -15,7 +16,7 @@ cp -r /opt/cdcp/bin /tmp/opt/cdcp 1>&2
 cp -r /opt/cdcp/xslt /tmp/opt/cdcp 1>&2
 
 mkdir -p /tmp/opt/cdcp/dist-final
-mkdir -p /tmp/opt/cdcp/source
+mkdir -p "${SOURCE_DIR}"
 
 # Build newline-delimited includes file from TEI_FILE or CHANGED_FILES_FILE
 includes_file="/tmp/opt/cdcp/includes.txt"
@@ -29,7 +30,10 @@ cleanup() {
 trap 'cleanup >/dev/null 2>&1 || true' INT TERM EXIT
 
 if [ -n "${CHANGED_FILES_FILE:-}" ] && [ -f "${CHANGED_FILES_FILE}" ]; then
-    tr -d '\r' < "${CHANGED_FILES_FILE}" > "$includes_file"
+    # Normalise paths: ensure entries are relative to the source directory
+    tr -d '\r' < "${CHANGED_FILES_FILE}" \
+      | sed -e "s|^${SOURCE_DIR}/*||" \
+      > "$includes_file"
 else
     printf '%s' "${TEI_FILE:-}" | tr -d '\r' > "$includes_file"
 fi
