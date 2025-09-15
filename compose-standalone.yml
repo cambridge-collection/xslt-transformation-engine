@@ -16,6 +16,7 @@ services:
       ALLOW_DELETE: false
       EXPAND_DEFAULT_ATTRIBUTES: ${EXPAND_DEFAULT_ATTRIBUTES:-false}
       ANT_LOG_LEVEL: ${ANT_LOG_LEVEL:-default}
+      WELLFORMEDNESS_FILTER: ${WELLFORMEDNESS_FILTER:-true}
     volumes:
       - ./out:/tmp/opt/cdcp/out:rw
       - ./source:/tmp/opt/cdcp/source:rw
