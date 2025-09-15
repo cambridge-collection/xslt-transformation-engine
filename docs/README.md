@@ -164,11 +164,11 @@ The default build supports optional hooks to run scripts before (`pre.sh`) and a
 These scripts must be placed within the `./docker` directory in order to run during the transformation scenario. They are called with three arguments
 
   - `pre.sh`: `<data.dir> --includes-file <path> | --pattern <glob>`
-  - `post.sh`: `<dist-pending.dir> --includes-file <path> | --pattern <glob>`
+  - `post.sh`: `<out-pending.dir> --includes-file <path> | --pattern <glob>`
 
 
   - `<data.dir>`: directory containing the source files (typically `./source`).
-  - `<dist-pending.dir>`: directory containing freshly generated outputs.
+  - `<out-pending.dir>`: directory containing freshly generated outputs.
   - `--includes-file <path>`: newline‑delimited file list (LF/CRLF), paths relative to `<data.dir>`.
   - `--pattern <glob>`: glob pattern to resolve relative to the provided directory.
 

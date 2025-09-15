@@ -17,6 +17,8 @@ RUN set -eux; \
       gzip \
       unzip \
       jq \
+      libxml2 \
+      findutils \
       ${JAVA_PACKAGE}; \
     dnf clean all
 
@@ -43,9 +45,10 @@ ENV CLASSPATH=/opt/saxon/saxon-he.jar
 COPY bootstrap ${LAMBDA_RUNTIME_DIR}
 
 WORKDIR /opt/cdcp
-COPY ./bin bin
+COPY --chmod=0755 ./bin bin
 COPY ./*.sh ${LAMBDA_TASK_ROOT}
 COPY ./xslt xslt
+COPY *.txt .
 
 # Combine chmods and directory creation to reduce layers
 RUN set -eux; \

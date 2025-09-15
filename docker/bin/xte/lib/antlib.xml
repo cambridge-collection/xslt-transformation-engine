@@ -94,7 +94,7 @@
             <condition property="files.for.processing" value="true" else="false">
                 <length string="${toString:files}" when="greater" length="0"/>
             </condition>
-            <echo level="warn" message="${toString:files}"/>
+            <echo level="debug" message="${toString:files}"/>
             <echo level="error" message="ERROR: No files to transform in @{filesetrefid}"
                 unless:true="${files.for.processing}"/>
 
@@ -139,6 +139,38 @@
                     <param name="fragment-output-dir" expression="${fragment-output-dir}"/>
                 </xslt>
             </sequential>
+        </sequential>
+    </macrodef>
+
+    <!--
+      Macro: clean-dir-if-changed
+      - Performs a boolean check comparing two directory properties.
+      - When they differ, sets a caller-specified property to true,
+        deletes the new_dir, and recreates it. Otherwise sets it to false.
+
+      Attributes:
+        propertyName : Name of the boolean property to set (e.g., cleanup.data.final)
+        new_dir      : Name of the property holding the target directory path
+        old_dir      : Name of the property holding the source directory path to compare against
+    -->
+    <macrodef name="clean-dir-if-changed">
+        <attribute name="new-dir"/>
+        <attribute name="old-dir"/>
+        <sequential>
+            <!-- Compute boolean indicating whether the dirs differ -->
+            <local name="dirname.different"/>
+            <condition property="dirname.different" value="true" else="false">
+                <not>
+                    <equals arg1="@{new-dir}" arg2="@{old-dir}" trim="true"/>
+                </not>
+            </condition>
+            <echo message="Removing @{new-dir} (different @{old-dir})" if:true="${dirname.different}" level="info"/>
+            <!-- Conditionally clean and recreate the target directory -->
+            <retry retrycount="6" if:true="${dirname.different}">
+                <delete dir="${@{new-dir}}" failonerror="no" />
+            </retry>
+            <echo message="Creating @{new-dir} (different @{old-dir})" if:true="${dirname.different}" level="info"/>
+            <mkdir dir="@{new-dir}" if:true="@{dirname.different}"/>
         </sequential>
     </macrodef>
 </antlib>

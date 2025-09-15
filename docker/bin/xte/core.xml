@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="xte-core" basedir=".." default="full"
+    xmlns:if="ant:if"
+    xmlns:unless="ant:unless"
+    xmlns:fs="antlib:cudl.fs">
+    <dirname property="buildfile.dir" file="${ant.file}"/>
+
+    <property environment="env"/>
+    <property name="ENVIRONMENT" value="${env.ENVIRONMENT}"/>
+    <property name="ANT_LOG_LEVEL" value="${env.ANT_LOG_LEVEL}"/>
+
+    <!-- Load reusable xte macros -->
+    <typedef file="${basedir}/xte/lib/antlib.xml" uri="antlib:cudl.fs"/>
+
+    <!-- The following switches can be passed when invoking ant to provide custom values -->
+
+    <!-- Exclude non-wellformed XML from processing -->
+    <property name="WELLFORMEDNESS_FILTER" value="${env.WELLFORMEDNESS_FILTER}"/>
+
+    <condition property="wellformedness.enabled" value="true" else="false">
+        <equals arg1="${WELLFORMEDNESS_FILTER}" arg2="true" trim="true"/>
+    </condition>
+
+    <!-- Original data files, source of run.prehook target -->
+    <property name="source.dir"  location="../source"/>
+
+    <!-- Output of release target, source of run.post.hook target -->
+    <property name="release.out.dir"  location="../out"/>
+
+    <!-- Output of run.prehook, source of wellformedness target - override in builds importing core.xml if implementing a prehook -->
+    <property name="prehook.out.dir"  location="${source.dir}"/>
+
+    <!-- Determine output of wellformedness target, source of transform.before target -->
+    <condition property="wellformedness.out.tmp" value="../wellformedness.out" else="${prehook.out.dir}">
+        <equals arg1="${wellformedness.enabled}" arg2="true"/>
+    </condition>
+    
+    <property name="wellformedness.out.dir"  location="${wellformedness.out.tmp}"/>
+    
+    <!--Output of transform.before target, source of transform target - override in builds importing core.xml if implementing a transform.before hook -->
+    <property name="transform.before.out.dir"  location="${wellformedness.out.dir}"/>
+    
+    <!-- Output of transform target, source of transform.after hook target -->
+    <property name="transform.out"  location="../transform-out"/>
+
+    <!-- Output of transform.after target, source or release.before target - override in builds importing core.xml if implementing a transform.after hook -->
+    <property name="transform.after.out.dir"  location="${transform.out}"/>
+
+    <!-- Output of release.before target, source of release target - override in builds importing core.xml if implementing a release.before hook -->
+    <property name="release.before.out.dir"  location="${transform.after.out.dir}"/>
+
+    <!-- Output of run.posthook, source of release-outputs -->
+    <property name="posthook.out.dir"  location="${release.before.out.dir}"/>
+
+    <condition property="files-to-process" value="${env.TEI_FILE}" else="*.xml"><!-- File(s) to build -->
+        <isset property="env.TEI_FILE"/>
+    </condition>
+    <property name="includes_file" value="/tmp/opt/cdcp/includes.txt"/><!-- Default path for includes file; overridden by -Dincludes_file -->
+
+    <!-- Final S3 Destinations -->
+    <property name="AWS_OUTPUT_BUCKET" value="${env.AWS_OUTPUT_BUCKET}"/>
+
+    <!-- XSLT File to use -->
+    <property name="XSLT_ENTRYPOINT" value="${env.XSLT_ENTRYPOINT}"/>
+    <property name="OUTPUT_EXTENSION" value="${env.OUTPUT_EXTENSION}"/>
+    <property name="EXPAND_DEFAULT_ATTRIBUTES" value="${env.EXPAND_DEFAULT_ATTRIBUTES}"/>
+    
+    <!-- Comprehensive builds -->
+
+    <target name="full" depends="cleanup, run.prehook, wellformedness, transform">
+        <antcall target="release-outputs"/>
+        <antcall target="cleanup"/>
+    </target>
+
+    <target name="wellformedness">
+        <echo level="info" if:true="${wellformedness.enabled}" message="INFO: ${WELLFORMEDNESS_FILTER} Performing wellformedness check on files"/>
+        <echo level="info" unless:true="${wellformedness.enabled}" message="INFO: ${WELLFORMEDNESS_FILTER} No wellformedness filtering"/>
+
+        <exec if:true="${wellformedness.enabled}" executable="./xte/lib/copy-wellformed.sh" resolveexecutable="true" failonerror="true" logError="true">
+                <arg value="${prehook.out.dir}"/>
+                <arg value="${wellformedness.out.dir}"/>
+            </exec>
+    </target>
+
+    <extension-point name="before-transform"/>
+    <extension-point name="after-transform"/>
+    <target name="transform" depends="perform-transform, after-transform"/>
+
+    <target name="perform-transform" depends="if.expand-default-attributes, cleanup, before-transform">
+        <fs:select-files dir="${transform.before.out.dir}" pattern="${files-to-process}" includesFile="${includes_file}" filesetId="original_xml"/>
+
+        <fs:xslt-transform filesetrefid="original_xml" 
+                           xslt="../${XSLT_ENTRYPOINT}" 
+                           extension=".${OUTPUT_EXTENSION}"
+                           dest="${transform.out}"
+                           expand-default-attributes="${expand-default-attributes}" />
+    </target>
+
+     <!-- Private tasks called from main tasks -->
+
+    <extension-point name="before-release-outputs"/>
+    <extension-point name="after-release-outputs"/>
+    <target name="release-outputs" depends="perform-release-outputs, after-release-outputs"/>
+
+    <target name="perform-release-outputs" depends="if.standalone.environment, before-release-outputs, run.posthook">
+        <antcall if:true="${is.standalone.environment}" target="_copy_to_dist"/>
+        <antcall unless:true="${is.standalone.environment}" target="_copy_to_s3"/>
+    </target>
+
+    <target name="_copy_to_dist">
+        <copy todir="${release.out.dir}">
+            <fileset dir="${release.before.out.dir}">
+                <include name="**/*"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="_copy_to_s3">
+        <parallel>
+            <antcall target="_copy_www_to_s3"/>
+        </parallel>
+    </target>
+
+    <target name="_copy_www_to_s3">
+        <condition property="www.exists" value="true" else="false">
+            <available file="${release.before.out.dir}" type="dir"/>
+        </condition>
+        <echo level="info" if:true="${www.exists}" message="INFO: Copying ${release.before.out.dir} to S3://${AWS_OUTPUT_BUCKET}"/>
+        <exec if:true="${www.exists}" executable="aws" resolveexecutable="true">
+            <arg value="s3"/>
+            <arg value="sync"/>
+            <arg value="--quiet"/>
+            <arg value="${release.before.out.dir}"/>
+            <arg value="s3://${AWS_OUTPUT_BUCKET}"/>
+        </exec>
+    </target>
+
+    <target name="if.standalone.environment">
+        <condition property="is.standalone.environment" value="true" else="false">
+            <equals arg1="${ENVIRONMENT}" arg2="standalone" trim="true"/>
+        </condition>
+    </target>
+
+    <target name="if.expand-default-attributes">
+        <condition property="expand-default-attributes" value="true" else="false">
+            <equals arg1="${EXPAND_DEFAULT_ATTRIBUTES}" arg2="true" trim="true"/>
+        </condition>
+    </target>
+
+    <extension-point name="run.prehook"/>
+    <extension-point name="run.posthook"/>
+
+    <target name="cleanup">
+        <echo level="info">INFO: Cleaning up previous build results</echo>
+        
+        <retry retrycount="6">
+            <delete dir="${transform.out}" failonerror="no" />
+        </retry>
+
+        <fs:clean-dir-if-changed new-dir="${prehook.out.dir}" old-dir="${source.dir}"/>
+        <fs:clean-dir-if-changed new-dir="${wellformedness.out.dir}" old-dir="${source.dir}"/>
+        <fs:clean-dir-if-changed new-dir="${transform.before.out.dir}" old-dir="${source.dir}"/>
+
+        <fs:clean-dir-if-changed new-dir="${transform.after.out.dir}" old-dir="${transform.out}"/>
+        <fs:clean-dir-if-changed new-dir="${release.before.out.dir}" old-dir="${transform.out}"/>
+    </target>
+
+        <!-- Macro to run pre/post hook scripts with minimal duplication -->
+    <macrodef name="run-hook">
+        <attribute name="label"/><!-- e.g. pre | post (for logging) -->
+        <attribute name="script"/><!-- absolute path to hook script -->
+        <attribute name="sourcedir"/><!-- directory provided to script as 'source-dir' switch -->
+        <attribute name="outdir"/><!-- directory provided to script as 'out-dir' switch -->
+        <sequential>
+            <!-- Check presence of the hook script -->
+            <available file="@{script}" property="@{label}hook.present" value="true"/>
+
+            <!-- Build fileset from includes and current filter -->
+            <fs:requested-files files="${files-to-process}" includesFile="${includes_file}" property="@{label}hook_fs"/>
+
+            <!-- Informational logging -->
+            <echo level="info" if:true="${@{label}hook.present}">INFO: Running @{label}.hook</echo>
+            <echo level="info" unless:true="${@{label}hook.present}">INFO: No @{label}.hook</echo>
+
+            <!-- Create temp includes file listing selected inputs -->
+            <tempfile if:true="${@{label}hook.present}" property="@{label}hook.includes.file" destdir="${java.io.tmpdir}" prefix="includes-@{label}-" suffix=".txt" deleteonexit="true"/>
+            <echo if:true="${@{label}hook.present}" file="${@{label}hook.includes.file}" message="${@{label}hook_fs}"/>
+
+            <!-- Execute hook script -->
+            <exec if:true="${@{label}hook.present}" executable="@{script}" resolveexecutable="true" failonerror="true" logError="true">
+                <arg value="--source-dir"/>
+                <arg value="@{sourcedir}"/>
+                <arg value="--includes-file"/>
+                <arg value="${@{label}hook.includes.file}"/>
+                <arg value="--out-dir"/>
+                <arg value="@{outdir}"/>
+            </exec>
+            <delete if:true="${@{label}hook.present}" file="${@{label}hook.includes.file}" quiet="true"/>
+        </sequential>
+    </macrodef>
+
+</project>
