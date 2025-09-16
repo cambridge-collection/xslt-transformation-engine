@@ -2,14 +2,14 @@
 
 set -eu
 
-# Normalise XTE_MODE to lowercase for comparison
+. "${LAMBDA_TASK_ROOT:-/var/task}/logging.sh"
+
 MODE="$(printf '%s' "${XTE_MODE:-}" | tr '[:upper:]' '[:lower:]')"
 
 if [ "$MODE" = "standalone" ]; then
-  echo "Delegating to /var/task/standalone.sh" >&1
+  log_info "Delegating to /var/task/standalone.sh"
   exec /var/task/standalone.sh
 else
-    echo "Delegating to Lambda entrypoint" >&1
+  log_info "Delegating to Lambda entrypoint"
   exec /lambda-entrypoint.sh "$@"
 fi
-

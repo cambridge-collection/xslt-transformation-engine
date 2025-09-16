@@ -16,7 +16,7 @@ urldecode() {
 }
 
 function clean_source_workspace() {
-	echo "$1" >&1 &&
+	log_info "$1" &&
 		rm -rf "/tmp/opt/cdcp/source" &&
 		mkdir -p "/tmp/opt/cdcp/source"
 }
@@ -30,7 +30,9 @@ ANT_LOG_LEVEL="$(printf '%s' "${ANT_LOG_LEVEL:-default}" | tr '[:upper:]' '[:low
 
 set +a
 
-echo "Populating working dir with essentials" >&1
+. "${LAMBDA_TASK_ROOT:-/var/task}/logging.sh"
+
+log_info "Populating working dir with essentials"
 cp -r /opt/cdcp/bin /tmp/opt/cdcp
 cp -r /opt/cdcp/xslt /tmp/opt/cdcp
 
@@ -62,8 +64,8 @@ else
 fi
 
 function handler() {
-	echo "Parsing event notification" >&1
-	echo "$1" >&1
+    log_info "Parsing event notification"
+    log_debug "$1"
 
 	EVENTNAME=$(echo "$1" | jq -r '.Records[].body' | jq -r '.Records[].eventName')
 	S3_BUCKET=$(echo "$1" | jq -r '.Records[].body' | jq -r '.Records[].s3.bucket.name')
@@ -75,35 +77,35 @@ function handler() {
 
 		if [[ "$EVENTNAME" =~ ^ObjectCreated ]]; then
 
-			echo "Processing requested for s3://${S3_BUCKET}/${TEI_FILE}" >&1
-			clean_source_workspace "Cleaning source workspace..." &&
-				echo "Done" >&1
+            log_info "Processing requested for s3://${S3_BUCKET}/${TEI_FILE}"
+            clean_source_workspace "Cleaning source workspace..." &&
+                log_info "Done"
 
 			
-	echo "Downloading s3://${S3_BUCKET}/${TEI_FILE}" >&1
-	TARGET_PATH="/tmp/opt/cdcp/source/${TEI_FILE}"
-	mkdir -p "$(dirname "${TARGET_PATH}")"
-	aws s3 cp --quiet "s3://${S3_BUCKET}/${TEI_FILE}" "${TARGET_PATH}" >&1 &&
-				echo "Processing ${TEI_FILE}" >&1
-			(/opt/ant/bin/ant ${ANT_LOG_FLAG} -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} $ANT_TARGET -Dfiles-to-process="$TEI_FILE" -DANT_LOG_LEVEL="$ANT_LOG_LEVEL") &&
-				clean_source_workspace "Cleaning up source workspace" &&
-				echo "OK" >&1
+    log_info "Downloading s3://${S3_BUCKET}/${TEI_FILE}"
+    TARGET_PATH="/tmp/opt/cdcp/source/${TEI_FILE}"
+    mkdir -p "$(dirname "${TARGET_PATH}")"
+    aws s3 cp --quiet "s3://${S3_BUCKET}/${TEI_FILE}" "${TARGET_PATH}" 1>&2 &&
+                    log_info "Processing ${TEI_FILE}"
+                (/opt/ant/bin/ant ${ANT_LOG_FLAG} -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} $ANT_TARGET -Dfiles-to-process="$TEI_FILE" -DANT_LOG_LEVEL="$ANT_LOG_LEVEL" 1>&2) &&
+                clean_source_workspace "Cleaning up source workspace" &&
+                log_info "OK"
 		elif [[ "$EVENTNAME" =~ ^ObjectRemoved && "$DELETE_ENABLED" = true ]]; then
-			echo "Removing all outputs for: s3://${S3_BUCKET}/${TEI_FILE} from s3://${AWS_OUTPUT_BUCKET}" >&1
-			FILENAME=$(basename "$TEI_FILE" ".xml")
-			CONTAINING_DIR=$(dirname "$TEI_FILE")
-			# Do not execute delete, even when ALLOW_DELETE is true, to allow for testing of the consequences of the command
-			aws s3 rm s3://${AWS_OUTPUT_BUCKET} --dryrun --recursive --exclude "*" --include "**/${FILENAME}.${OUTPUT_EXTENSION}" --include "${FILENAME}.${OUTPUT_EXTENSION}" >&1 &&
-				echo "OK" >&1
+            log_info "Removing all outputs for: s3://${S3_BUCKET}/${TEI_FILE} from s3://${AWS_OUTPUT_BUCKET}"
+            FILENAME=$(basename "$TEI_FILE" ".xml")
+            CONTAINING_DIR=$(dirname "$TEI_FILE")
+            # Do not execute delete, even when ALLOW_DELETE is true, to allow for testing of the consequences of the command
+            aws s3 rm s3://${AWS_OUTPUT_BUCKET} --dryrun --recursive --exclude "*" --include "**/${FILENAME}.${OUTPUT_EXTENSION}" --include "${FILENAME}.${OUTPUT_EXTENSION}" 1>&2 &&
+                log_info "OK"
 		else
-			echo "ERROR: Unsupported event: ${EVENTNAME}" >&2
+			log_error "Unsupported event: ${EVENTNAME}"
 			return 1
 		fi
 	else
-		if [[ ! -v "AWS_OUTPUT_BUCKET" ]]; then echo "ERROR: AWS_OUTPUT_BUCKET environment var not set" >&2; fi
-		if [[ ! -v "ANT_TARGET" ]]; then echo "ERROR: ANT_TARGET environment var not set" >&2; fi
-		if [[ -z "$S3_BUCKET" ]]; then echo "ERROR: Problem parsing event json for S3 Bucket" >&2; fi
-		if [[ -z "$TEI_FILE" ]]; then echo "ERROR: Problem parsing event json for TEI filename" >&2; fi
+		if [[ ! -v "AWS_OUTPUT_BUCKET" ]]; then log_error "AWS_OUTPUT_BUCKET environment var not set"; fi
+		if [[ ! -v "ANT_TARGET" ]]; then log_error "ANT_TARGET environment var not set"; fi
+		if [[ -z "$S3_BUCKET" ]]; then log_error "Problem parsing event json for S3 Bucket"; fi
+		if [[ -z "$TEI_FILE" ]]; then log_error "Problem parsing event json for TEI filename"; fi
 		return 1
 	fi
 }

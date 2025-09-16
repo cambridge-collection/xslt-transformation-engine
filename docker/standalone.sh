@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-# Set defaults for lambda for certain unset ENV vars:
 set -a
 : "${ANT_BUILDFILE:=bin/build.xml}"
 : "${ALLOW_DELETE:=false}"
@@ -11,6 +10,8 @@ ANT_LOG_LEVEL="$(printf '%s' "${ANT_LOG_LEVEL:-default}" | tr '[:upper:]' '[:low
 SOURCE_DIR="${SOURCE_DIR:=/tmp/opt/cdcp/source}"
 
 set +a
+
+. "${LAMBDA_TASK_ROOT:-/var/task}/logging.sh"
 
 cp -r /opt/cdcp/bin /tmp/opt/cdcp 1>&2
 cp -r /opt/cdcp/xslt /tmp/opt/cdcp 1>&2
@@ -22,7 +23,6 @@ mkdir -p "${SOURCE_DIR}"
 includes_file="/tmp/opt/cdcp/includes.txt"
 : > "$includes_file"
 
-# Always clean up includes_file; remove CHANGED_FILES_FILE if set
 cleanup() {
     [ -n "${CHANGED_FILES_FILE:-}" ] && rm -f -- "$CHANGED_FILES_FILE"
     rm -f -- "$includes_file"
@@ -59,4 +59,4 @@ case "${ANT_LOG_LEVEL}" in
         ;;
 esac
 
-/opt/ant/bin/ant ${ANT_LOG_FLAG} -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} -lib /opt/cdcp/bin/xte/lib/antlib.xml $ANT_TARGET -Dincludes_file="$includes_file" -DANT_LOG_LEVEL="$ANT_LOG_LEVEL"
+/opt/ant/bin/ant ${ANT_LOG_FLAG} -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} -lib /opt/cdcp/bin/xte/lib/antlib.xml $ANT_TARGET -Dincludes_file="$includes_file" -DANT_LOG_LEVEL="$ANT_LOG_LEVEL" 1>&2
