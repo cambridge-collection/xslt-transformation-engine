@@ -76,27 +76,43 @@ function handler() {
 	if [[ -v "AWS_OUTPUT_BUCKET" && -v "ANT_TARGET" && -n "$S3_BUCKET" && -n "$TEI_FILE" ]]; then
 
 		if [[ "$EVENTNAME" =~ ^ObjectCreated ]]; then
+			log_info "Processing requested for s3://${S3_BUCKET}/${TEI_FILE}"
+			clean_source_workspace "Cleaning source workspace..." &&
+				log_info "Done"
 
-            log_info "Processing requested for s3://${S3_BUCKET}/${TEI_FILE}"
-            clean_source_workspace "Cleaning source workspace..." &&
-                log_info "Done"
+			log_info "Downloading s3://${S3_BUCKET}/${TEI_FILE}"
+			TARGET_PATH="/tmp/opt/cdcp/source/${TEI_FILE}"
+			mkdir -p "$(dirname "${TARGET_PATH}")"
+			if ! aws s3 cp --quiet "s3://${S3_BUCKET}/${TEI_FILE}" "${TARGET_PATH}" 1>&2; then
+				local status=${PIPESTATUS[0]}
+				log_error "Download failed for s3://${S3_BUCKET}/${TEI_FILE} (exit ${status})"
+				return "$status"
+			fi
 
-			
-    log_info "Downloading s3://${S3_BUCKET}/${TEI_FILE}"
-    TARGET_PATH="/tmp/opt/cdcp/source/${TEI_FILE}"
-    mkdir -p "$(dirname "${TARGET_PATH}")"
-    aws s3 cp --quiet "s3://${S3_BUCKET}/${TEI_FILE}" "${TARGET_PATH}" 1>&2 &&
-                    log_info "Processing ${TEI_FILE}"
-                (/opt/ant/bin/ant ${ANT_LOG_FLAG} -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} $ANT_TARGET -Dfiles-to-process="$TEI_FILE" -DANT_LOG_LEVEL="$ANT_LOG_LEVEL" 1>&2) &&
-                clean_source_workspace "Cleaning up source workspace" &&
-                log_info "OK"
+			log_info "Processing ${TEI_FILE}"
+			if ! (/opt/ant/bin/ant ${ANT_LOG_FLAG} -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} $ANT_TARGET -Dfiles-to-process="$TEI_FILE" -DANT_LOG_LEVEL="$ANT_LOG_LEVEL" 1>&2); then
+				local status=${PIPESTATUS[0]}
+				log_error "ANT target ${ANT_TARGET} failed (exit ${status})"
+				return "$status"
+			fi
+
+			if ! clean_source_workspace "Cleaning up source workspace"; then
+				log_error "Failed to clean source workspace"
+				return 1
+			fi
+
+			log_info "OK"
 		elif [[ "$EVENTNAME" =~ ^ObjectRemoved && "$DELETE_ENABLED" = true ]]; then
-            log_info "Removing all outputs for: s3://${S3_BUCKET}/${TEI_FILE} from s3://${AWS_OUTPUT_BUCKET}"
-            FILENAME=$(basename "$TEI_FILE" ".xml")
-            CONTAINING_DIR=$(dirname "$TEI_FILE")
-            # Do not execute delete, even when ALLOW_DELETE is true, to allow for testing of the consequences of the command
-            aws s3 rm s3://${AWS_OUTPUT_BUCKET} --dryrun --recursive --exclude "*" --include "**/${FILENAME}.${OUTPUT_EXTENSION}" --include "${FILENAME}.${OUTPUT_EXTENSION}" 1>&2 &&
-                log_info "OK"
+			log_info "Removing all outputs for: s3://${S3_BUCKET}/${TEI_FILE} from s3://${AWS_OUTPUT_BUCKET}"
+			FILENAME=$(basename "$TEI_FILE" ".xml")
+			CONTAINING_DIR=$(dirname "$TEI_FILE")
+			# Do not execute delete, even when ALLOW_DELETE is true, to allow for testing of the consequences of the command
+			if ! aws s3 rm s3://${AWS_OUTPUT_BUCKET} --dryrun --recursive --exclude "*" --include "**/${FILENAME}.${OUTPUT_EXTENSION}" --include "${FILENAME}.${OUTPUT_EXTENSION}" 1>&2; then
+				local status=${PIPESTATUS[0]}
+				log_error "Failed to remove outputs for s3://${S3_BUCKET}/${TEI_FILE} (exit ${status})"
+				return "$status"
+			fi
+			log_info "OK"
 		else
 			log_error "Unsupported event: ${EVENTNAME}"
 			return 1
