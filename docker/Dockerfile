@@ -48,7 +48,6 @@ WORKDIR /opt/cdcp
 COPY --chmod=0755 ./bin bin
 COPY ./*.sh ${LAMBDA_TASK_ROOT}
 COPY ./xslt xslt
-COPY *.txt .
 
 # Combine chmods and directory creation to reduce layers
 RUN set -eux; \
