@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="xte-sample" default="full">
+
+
+    <target name="run.prehook">
+        <!-- Define prehook.out.dir outside of target before importing core.xml -->
+        <!-- Data source: source.dir Data output: prehook.out.dir -->
+        <echo message="Running local prehook"/>
+        <run-hook label="pre" script="/var/task/pre.sh" sourcedir="${source.dir}" outdir="${prehook.out.dir}"/>
+    </target>
+    
+    <target name="local-transform.before" extensionOf="before-transform">
+        <!-- Define transform.before.out.dir outside of target before importing core.xml -->
+        <!-- Data source: wellformedness.out.dir Data output: transform.before.out.dir -->
+        <echo message="Running local transform.before"/>
+    </target>
+    
+    <target name="local-transform.after" extensionOf="after-transform">
+        <!-- Define transform.after.out.dir outside of target before importing core.xml -->
+        <!-- Data source: transform.out Data output: transform.after.out.dir -->
+        <echo message="Running local transform.after"/>
+    </target>
+    
+    <target name="local-release.before" extensionOf="before-release-outputs">
+        <!-- Define release.before.out.dir outside of target before importing core.xml -->
+        <!-- Data source: transform.after.out.dir Data output: release.before.out.dir -->
+        <echo message="Running local release.before"/>
+    </target>
+    
+    <target name="local-release" extensionOf="after-release-outputs">
+        <!-- Define release.out.dir outside of target before importing core.xml -->
+        <!-- Data source: release.before.out.dir Data output: release.out.dir -->
+        <echo message="Running local release"/>
+    </target>
+    
+    <target name="run.posthook">
+        <!-- Define prehook.out.dir outside of target before importing core.xml -->
+        <!-- Data source: release.out.dir Data output: prehook.out.dir -->
+        <echo message="Running local posthook"/>
+        <run-hook label="post" script="/var/task/post.sh" sourcedir="${release.before.out.dir}" outdir="${posthook.out.dir}"/>
+    </target>
+
+    <import file="./xte/core.xml"/>
+    
+</project>
