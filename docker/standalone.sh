@@ -59,4 +59,8 @@ case "${ANT_LOG_LEVEL}" in
         ;;
 esac
 
-/opt/ant/bin/ant ${ANT_LOG_FLAG} -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} -lib /opt/cdcp/bin/xte/lib/antlib.xml $ANT_TARGET -Dincludes_file="$includes_file" -DANT_LOG_LEVEL="$ANT_LOG_LEVEL" 1>&2
+if ! /opt/ant/bin/ant ${ANT_LOG_FLAG} -buildfile /tmp/opt/cdcp/${ANT_BUILDFILE} -lib /opt/cdcp/bin/xte/lib/antlib.xml $ANT_TARGET -Dincludes_file="$includes_file" -DANT_LOG_LEVEL="$ANT_LOG_LEVEL" 1>&2; then
+    status=$?
+    log_error "ANT target ${ANT_TARGET:-} failed (exit ${status})"
+    exit "$status"
+fi
