@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.6.1](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.6.0...v1.6.1) (2025-09-16)
+
+
+### Bug Fixes
+
+* **logging:** ensure errors return correct response codes ([bf0ec90](https://github.com/cambridge-collection/xslt-transformation-engine/commit/bf0ec9094dd104357a26864b61fc95f83621d87b))
+* remove COPY used to test container ([ae4af45](https://github.com/cambridge-collection/xslt-transformation-engine/commit/ae4af45fc9d9c8f73544e5c06e75f544b1ce35bf))
+
 ## [1.6.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.5.2...v1.6.0) (2025-09-16)
 
 
