@@ -3,6 +3,38 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.6.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.5.2...v1.6.0) (2025-09-16)
+
+
+### Features
+
+* add ANT_LOG_LEVEL property ([829dd07](https://github.com/cambridge-collection/xslt-transformation-engine/commit/829dd0740be2d89f732e55f92c182e29cdf46d5c))
+* add well-formedness filter and build hook ([daa4768](https://github.com/cambridge-collection/xslt-transformation-engine/commit/daa4768ca91926ae479ba39c3927567ff8f148a8))
+* **docker:** set entrypoint with XTE_MODE ([a005062](https://github.com/cambridge-collection/xslt-transformation-engine/commit/a005062dfff11071701f1318d09016fefa6b1846))
+* ensure paths to requested files relative to SOURCE_DIR ([9d379a6](https://github.com/cambridge-collection/xslt-transformation-engine/commit/9d379a6d6582c4fa0c0bcdb24bd4fd442a2f4948))
+
+
+### Bug Fixes
+
+* **logging:** shell scripts respect ANT_LOG_LEVEL ([f90445f](https://github.com/cambridge-collection/xslt-transformation-engine/commit/f90445f00d5486c028f57b3416969902a9654e9e))
+* make logging reflect ANT_LOG_LEVEL ([79dcdd7](https://github.com/cambridge-collection/xslt-transformation-engine/commit/79dcdd7301dde1aa0fd6bf1f5234e30b75811091))
+* **missing:** add missing examples ([367d7d6](https://github.com/cambridge-collection/xslt-transformation-engine/commit/367d7d69bd725004eae3875156c8b6d9dbbeb31b))
+
+
+### Build System
+
+* **compose-standalone:** use explicit bind mounts with rw for out/source ([844866c](https://github.com/cambridge-collection/xslt-transformation-engine/commit/844866c07f153adf896d85663e53672cb55335e8))
+
+
+### Refactoring
+
+* **ant:** add xslt-transform macro ([2b35095](https://github.com/cambridge-collection/xslt-transformation-engine/commit/2b35095bae0ec68bc1b1b6edcbc06a43e8ebf44b))
+
+
+### CI
+
+* **semver:** refine triggering commits ([f10ebc1](https://github.com/cambridge-collection/xslt-transformation-engine/commit/f10ebc13aa71d21b0a52a8f092f2917256aca89b))
+
 ## [1.5.2](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.5.1...v1.5.2) (2025-09-11)
 
 ## [1.5.1](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.5.0...v1.5.1) (2025-09-11)
