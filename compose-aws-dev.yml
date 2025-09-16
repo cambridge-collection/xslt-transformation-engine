@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
     container_name: ${INSTANCE_NAME:-xslt-transformation-engine}-aws-dev
     environment:
-      ENVIRONMENT: aws-local
+      ENVIRONMENT: aws-dev
       INSTANCE_NAME: ${INSTANCE_NAME:-xslt-transformation-engine}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
