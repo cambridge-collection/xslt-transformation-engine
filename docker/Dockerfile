@@ -65,4 +65,6 @@ RUN set -eux; \
     ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update; \
     rm -rf aws awscliv2.zip
 
+# Entrypoint wrapper selects between standalone and Lambda modes at runtime
+ENTRYPOINT [ "/var/task/entrypoint.sh" ]
 CMD [ "aws.sh.handler" ]
