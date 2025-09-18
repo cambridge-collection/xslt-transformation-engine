@@ -18,6 +18,7 @@ RUN set -eux; \
       unzip \
       jq \
       libxml2 \
+      rsync \
       findutils \
       ${JAVA_PACKAGE}; \
     dnf clean all
