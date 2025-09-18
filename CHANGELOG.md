@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.7.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.6.1...v1.7.0) (2025-09-18)
+
+
+### Features
+
+* add rsync for GH action ([a2f2cff](https://github.com/cambridge-collection/xslt-transformation-engine/commit/a2f2cfffd71ac9ac1f2723669c4ffc1ae50af4be))
+
 ## [1.6.1](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.6.0...v1.6.1) (2025-09-16)
 
 
