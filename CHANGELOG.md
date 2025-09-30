@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.0.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.7.0...v2.0.0) (2025-09-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* **v2:** Release V2
+
+### Features
+
+* **v2:** Release V2 ([d48f566](https://github.com/cambridge-collection/xslt-transformation-engine/commit/d48f566948fc976116c38a73ad49305e2ec123c2))
+
 ## [1.7.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.6.1...v1.7.0) (2025-09-18)
 
 
