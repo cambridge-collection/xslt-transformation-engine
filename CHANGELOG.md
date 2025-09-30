@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.0.0-pre.1](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.7.0...v2.0.0-pre.1) (2025-09-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* **env name and vars:** simplify and standardise names
+
+### Features
+
+* **env name and vars:** simplify and standardise names ([d0c7ffc](https://github.com/cambridge-collection/xslt-transformation-engine/commit/d0c7ffc7b327ff453c75838445955004f257fca3))
+
+
+### Documentation
+
+* fix error in source of after-transform ([2b0d116](https://github.com/cambridge-collection/xslt-transformation-engine/commit/2b0d116c74b783cc6cb94431f9316c24490454eb))
+
+
+### CI
+
+* **build:** add pre images ([85f6e8f](https://github.com/cambridge-collection/xslt-transformation-engine/commit/85f6e8f7ca935d8416f90f7c43fc40f99b09057b))
+
 ## [1.7.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.6.1...v1.7.0) (2025-09-18)
 
 
