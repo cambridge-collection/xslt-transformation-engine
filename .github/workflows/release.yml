@@ -93,7 +93,8 @@ jobs:
         uses: cycjimmy/semantic-release-action@v4
         with:
           semantic_version: 23.0.2
-          config: .releaserc.pre.json
+          config_file: .releaserc.pre.json
+          overwrite_config: true
           extra_plugins: |
             conventional-changelog-conventionalcommits@7.0.2
         env:
