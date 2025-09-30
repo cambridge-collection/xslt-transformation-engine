@@ -234,7 +234,7 @@ If you are are using any of the hooks, the relevant property below should be cha
 - Output directory: `transform.before.out.dir`
 
 **after-transform** runs after the transform
-- Source directory: `wellformedness.out.dir`
+- Source directory: `transform.out`
 - Output directory: `transform.after.out.dir`
 
 **before-release** runs before copying to the final destination
