@@ -94,8 +94,6 @@ jobs:
         with:
           semantic_version: 23.0.2
           extends: .releaserc.pre.json
-          extra_plugins: |
-            conventional-changelog-conventionalcommits@7.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
