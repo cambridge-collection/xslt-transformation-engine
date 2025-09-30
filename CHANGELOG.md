@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.0.0-pre.6](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v2.0.0-pre.5...v2.0.0-pre.6) (2025-09-30)
+
+
+### Bug Fixes
+
+* **ci:** change code again ([a59d74f](https://github.com/cambridge-collection/xslt-transformation-engine/commit/a59d74fa7a0ca78e644acc5a0076ea7b27851129))
+
+
+### Reverts
+
+* Revert "chore(release): version 2.0.0-pre.5 [skip ci]" ([2928b29](https://github.com/cambridge-collection/xslt-transformation-engine/commit/2928b2959ee33978e2369f04fa7ee95c06004f27))
+
+
+### CI
+
+* **changelog:** no changelog updates on pre ([8d6c437](https://github.com/cambridge-collection/xslt-transformation-engine/commit/8d6c4372d11cb4c3886d342b2d394743999a3035))
+
 ## [1.7.0](https://github.com/cambridge-collection/xslt-transformation-engine/compare/v1.6.1...v1.7.0) (2025-09-18)
 
 
