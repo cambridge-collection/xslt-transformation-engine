@@ -23,9 +23,8 @@ Both versions require additional specific environment parameters, but the follow
 
 | Variable Name               | Description                                                                                                                                                                                                                                                                                                                                             | Default |
 |-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| `ENVIRONMENT`               | Environment type for the build. Use `aws-dev` (local Lambda dev) or `standalone`.                                                                                                                                                                                                                                                                       |         |
-| `XTE_MODE`                  | Runtime mode selector for the container image. Set to `standalone` to run `/var/task/standalone.sh` immediately (non‑Lambda). If unset or any other value, the container delegates to the AWS Lambda entrypoint and runs the handler specified by `CMD` (default `aws.sh.handler`).                                                             |         |
-| `INSTANCE_NAME`             | Root name for the deployed container(s). `-standalone` and `-aws-dev` are appended by compose files.                                                                                                                                                                                                                                                  | `xslt-transformation-engine` |
+| `ENVIRONMENT`               | Runtime mode selector for the container image. Set to `standalone` to run `/var/task/standalone.sh` immediately (non‑Lambda). Use `aws` (default) to delegate to the AWS Lambda entrypoint and run the handler specified by `CMD` (default `aws.sh.handler`).                                                                                           | `aws`   |
+| `INSTANCE_NAME`             | Root name for the deployed container(s). `-standalone` and `-aws` are appended by compose files.                                                                                                                                                                                                                                                       | `xslt-transformation-engine` |
 | `ANT_BUILDFILE`             | Ant buildfile path (relative to container working dir).                                                                                                                                                                                                                                                                                                | `bin/build.xml` |
 | `ANT_TARGET`                | Ant target to execute. The default buildfile’s main entrypoint is `full`.                                                                                                                                                                                                                                                                                | `full`  |
 | `XSLT_ENTRYPOINT`           | Path to the XSLT entry stylesheet (relative to the image’s `xslt/` directory). The default XSLT is demo‑only.                                                                                                                                                                                                                                         | `xslt/TEI-to-HTML.xsl` |
@@ -59,10 +58,10 @@ Do not set these when running inside AWS Lambda; access is controlled via IAM ro
 
 ### Running the AWS dev container locally
 
-    $ docker compose --env-file ./my-aws-environment-vars -f compose-aws-dev.yml up --force-recreate --build
+    $ docker compose --env-file ./my-aws-environment-vars -f compose-aws.yml up --force-recreate --build
 
 
-**DO NOT USE `compose-aws-dev.yml` to build the container for deployment within AWS.** Instead, follow the instructions for [building the lambda for deployment in AWS](#building-the-lambda-for-deployment-in-aws).
+**DO NOT USE `compose-aws.yml` to build the container for deployment within AWS.** Instead, follow the instructions for [building the lambda for deployment in AWS](#building-the-lambda-for-deployment-in-aws).
 
 ### Processing a file
 
@@ -72,7 +71,7 @@ The AWS flavour responds to SQS‑shaped events. To transform a file, submit a J
 
 ### Stopping the container
 
-Run `docker compose -f compose-aws-dev.yml down`.
+Run `docker compose -f compose-aws.yml down`.
 
 ## Test Messages for locally-running AWS dev lambda
 
@@ -103,7 +102,7 @@ Two directories at the same level as `./docker`:
 
 | Variable Name        | Description                                                                                                       | Default      |
 |----------------------|-------------------------------------------------------------------------------------------------------------------|--------------|
-| `ENVIRONMENT`        | Environment type for the build                                                                                    | `standalone` |
+| `ENVIRONMENT`        | Runtime mode for the container (`aws` or `standalone`)                                                            | `standalone` |
 | `TEI_FILE`           | Glob of TEI file(s) to process, relative to `./source`                                                            | `**/*.xml`   |
 | `CHANGED_FILES_FILE` | Optional path to a newline‑delimited list of source files (relative to `./source`). Takes precedence over `TEI_FILE`. |              |
 
@@ -212,7 +211,7 @@ The default build pipeline proceeds as follows:
 5. `transform`: performs the main XSLT transform using `XSLT_ENTRYPOINT` and writes to `transform.out`.
 6. `after-transform` hook (if it exists)
 7. `before-release` hook (if it exists)
-5. `release-outputs`: copies results to either a local dir (`standalone`) or S3 (`aws-dev`)
+5. `release-outputs`: copies results to either a local dir (`standalone`) or S3 (`aws`)
 6. `run.posthook` (if it exists)
 
 Important properties you can override in your scenario build:

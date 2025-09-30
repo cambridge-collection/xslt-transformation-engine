@@ -4,12 +4,15 @@ set -eu
 
 . "${LAMBDA_TASK_ROOT:-/var/task}/logging.sh"
 
-MODE="$(printf '%s' "${XTE_MODE:-}" | tr '[:upper:]' '[:lower:]')"
+ENVIRONMENT_MODE="$(printf '%s' "${ENVIRONMENT:-aws}" | tr '[:upper:]' '[:lower:]')"
 
-if [ "$MODE" = "standalone" ]; then
+if [ "$ENVIRONMENT_MODE" = "standalone" ]; then
   log_info "Delegating to /var/task/standalone.sh"
   exec /var/task/standalone.sh
 else
+  if [ "$ENVIRONMENT_MODE" != "aws" ]; then
+    log_warn "Unrecognised ENVIRONMENT: '$ENVIRONMENT_MODE'; defaulting to aws"
+  fi
   log_info "Delegating to Lambda entrypoint"
   exec /lambda-entrypoint.sh "$@"
 fi
