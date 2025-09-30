@@ -1,0 +1,316 @@
+name: Transform XML and Upload
+
+on:
+  push:
+    branches: [release]
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # required for AWS OIDC role assumption
+  contents: write   # tags are pushed back to the repo on success
+
+env:
+  WATCH_SUBDIR: ${{ vars.XTE_WATCH_SUBDIR || '' }}
+  CHANGED_FILES_FILE: ${{ vars.CHANGED_FILES_FILE || 'source/changed-files.txt' }}
+  LAST_SUCCESS_TAG_NAME: ${{ vars.LAST_SUCCESS_TAG_NAME || 'transform-last-success' }}
+  DELETED_FILES_FILE: ${{ vars.DELETED_FILES_FILE || 'source/deleted-files.txt' }}
+  DEFAULT_RUN_SCOPE: ${{ vars.DEFAULT_RUN_SCOPE || 'changed' }}
+
+concurrency:
+  group: main-upload
+  cancel-in-progress: true
+
+jobs:
+  transform:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        # TODO: Pin this action to a specific commit SHA before adopting outside examples.
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Decide transform scope
+        id: prep
+        run: |
+          set -euo pipefail
+
+          CHANGED_LIST="${CHANGED_FILES_FILE:-source/changed-files.txt}"
+          case "$CHANGED_LIST" in
+            source/*) ;;
+            *) echo "CHANGED_FILES_FILE must be under source/ (got $CHANGED_LIST)" >&2; exit 1 ;;
+          esac
+
+          DELETED_LIST="${DELETED_FILES_FILE:-source/deleted-files.txt}"
+          case "$DELETED_LIST" in
+            source/*) ;;
+            *) echo "DELETED_FILES_FILE must be under source/ (got $DELETED_LIST)" >&2; exit 1 ;;
+          esac
+
+          mkdir -p "$(dirname "$CHANGED_LIST")"
+          mkdir -p "$(dirname "$DELETED_LIST")"
+
+          WATCH_SUBDIR_CLEAN="${WATCH_SUBDIR#/}"
+          WATCH_SUBDIR_CLEAN="${WATCH_SUBDIR_CLEAN%/}"
+          if [ -n "$WATCH_SUBDIR_CLEAN" ]; then
+            WATCH_GLOB="source/${WATCH_SUBDIR_CLEAN}/**"
+          else
+            WATCH_GLOB="source/**"
+          fi
+
+          DEFAULT_SCOPE=$(printf '%s' "${DEFAULT_RUN_SCOPE:-}" | tr '[:upper:]' '[:lower:]')
+          if [ -z "$DEFAULT_SCOPE" ]; then
+            DEFAULT_SCOPE="changed"
+          fi
+
+          TAG_NAME="${LAST_SUCCESS_TAG_NAME:-transform-last-success}"
+          BASE_SHA=""
+
+          TAG_COMMIT=$(git ls-remote --tags origin "$TAG_NAME" 2>/dev/null | awk '{print $1}' | tail -n1 || true)
+          if [ -n "$TAG_COMMIT" ]; then
+            git fetch origin "refs/tags/$TAG_NAME:refs/tags/$TAG_NAME" >/dev/null 2>&1 || true
+            if git rev-parse "$TAG_NAME^{commit}" >/dev/null 2>&1; then
+              BASE_SHA=$(git rev-parse "$TAG_NAME^{commit}")
+            else
+              BASE_SHA="$TAG_COMMIT"
+            fi
+          fi
+
+          RUN_SCOPE="changed"
+          SHOULD_TRANSFORM=false
+          HAS_DELETIONS=false
+
+          if [ "$DEFAULT_SCOPE" = "all" ]; then
+            echo "DEFAULT_RUN_SCOPE is 'all'; running full transform" >&2
+            RUN_SCOPE="all"
+            SHOULD_TRANSFORM=true
+            rm -f "$CHANGED_LIST" "$DELETED_LIST"
+            echo "run_scope=$RUN_SCOPE" >>"$GITHUB_OUTPUT"
+            echo "should_transform=true" >>"$GITHUB_OUTPUT"
+            echo "has_deletions=false" >>"$GITHUB_OUTPUT"
+            echo "changed=true" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -z "$BASE_SHA" ]; then
+            echo "No previous success tag found; running full transform" >&2
+            RUN_SCOPE="all"
+            SHOULD_TRANSFORM=true
+            rm -f "$CHANGED_LIST" "$DELETED_LIST"
+            echo "run_scope=$RUN_SCOPE" >>"$GITHUB_OUTPUT"
+            echo "should_transform=true" >>"$GITHUB_OUTPUT"
+            echo "has_deletions=false" >>"$GITHUB_OUTPUT"
+            echo "changed=true" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Diffing from $BASE_SHA to ${GITHUB_SHA}" >&2
+
+          git diff --name-only --diff-filter=AM "$BASE_SHA" "${GITHUB_SHA}" -- "$WATCH_GLOB" \
+            | awk '/\.xml$/ { sub("^source/", ""); if (length($0)) print }' > "$CHANGED_LIST"
+
+          if [ -s "$CHANGED_LIST" ]; then
+            SHOULD_TRANSFORM=true
+            CHANGED_COUNT=$(wc -l <"$CHANGED_LIST" 2>/dev/null | tr -d ' ' || echo 0)
+          else
+            rm -f "$CHANGED_LIST"
+            CHANGED_COUNT=0
+          fi
+          echo "Detected $CHANGED_COUNT changed XML file(s)" >&2
+
+          git diff --name-only --diff-filter=D "$BASE_SHA" "${GITHUB_SHA}" -- "$WATCH_GLOB" \
+            | awk '/\.xml$/ { sub("^source/", ""); if (length($0)) print }' > "$DELETED_LIST"
+
+          if [ -s "$DELETED_LIST" ]; then
+            HAS_DELETIONS=true
+            DELETED_COUNT=$(wc -l <"$DELETED_LIST" 2>/dev/null | tr -d ' ' || echo 0)
+          else
+            rm -f "$DELETED_LIST"
+            DELETED_COUNT=0
+          fi
+          echo "Detected $DELETED_COUNT deleted XML file(s)" >&2
+
+          if [ "$SHOULD_TRANSFORM" = false ]; then
+            COMMIT_COUNT=$(git rev-list --count HEAD)
+            if [ "$COMMIT_COUNT" -le 1 ]; then
+              RUN_SCOPE="all"
+              SHOULD_TRANSFORM=true
+            fi
+          fi
+
+          if [ "$RUN_SCOPE" = "all" ]; then
+            rm -f "$CHANGED_LIST"
+          fi
+
+          if [ "$SHOULD_TRANSFORM" = false ] && [ "$HAS_DELETIONS" = false ]; then
+            echo "run_scope=$RUN_SCOPE" >>"$GITHUB_OUTPUT"
+            echo "should_transform=false" >>"$GITHUB_OUTPUT"
+            echo "has_deletions=false" >>"$GITHUB_OUTPUT"
+            echo "changed=false" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SHOULD_TRANSFORM_VALUE=$([ "$SHOULD_TRANSFORM" = true ] && echo true || echo false)
+          HAS_DELETIONS_VALUE=$([ "$HAS_DELETIONS" = true ] && echo true || echo false)
+          if [ "$SHOULD_TRANSFORM" = true ] || [ "$HAS_DELETIONS" = true ]; then
+            HAS_WORK_VALUE=true
+          else
+            HAS_WORK_VALUE=false
+          fi
+
+          echo "run_scope=$RUN_SCOPE" >>"$GITHUB_OUTPUT"
+          echo "should_transform=$SHOULD_TRANSFORM_VALUE" >>"$GITHUB_OUTPUT"
+          echo "has_deletions=$HAS_DELETIONS_VALUE" >>"$GITHUB_OUTPUT"
+          echo "changed=$HAS_WORK_VALUE" >>"$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        if: steps.prep.outputs.should_transform == 'true' || steps.prep.outputs.has_deletions == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        # TODO: Pin this action to a specific commit SHA before adopting outside examples.
+        with:
+          role-to-assume:   ${{ secrets.AWS_S3_UPLOAD_ROLE_ARN }}
+          role-session-name: ${{ vars.XTE_ROLE_SESSION_NAME || 'xteSnapshotUpload' }}
+          aws-region:        ${{ vars.AWS_REGION || secrets.AWS_REGION }}
+
+      - name: Remove outputs for deleted sources
+        if: steps.prep.outputs.has_deletions == 'true'
+        env:
+          OUTPUT_BUCKET:     ${{ secrets.XTE_OUTPUT_BUCKET }}
+          OUTPUT_PREFIX:     ${{ vars.XTE_OUTPUT_PREFIX || secrets.XTE_OUTPUT_PREFIX || '' }}
+          DELETED_FILES_FILE: ${{ env.DELETED_FILES_FILE }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$OUTPUT_BUCKET" ]; then
+            echo "OUTPUT_BUCKET secret not configured" >&2
+            exit 1
+          fi
+
+          DELETED_LIST="${DELETED_FILES_FILE:-source/deleted-files.txt}"
+          if [ ! -s "$DELETED_LIST" ]; then
+            echo "No deleted source list found; skipping" >&2
+            exit 0
+          fi
+
+          DEST_BASE="s3://${OUTPUT_BUCKET%/}"
+          DEST_PREFIX=""
+          if [ -n "$OUTPUT_PREFIX" ]; then
+            CLEAN_PREFIX="${OUTPUT_PREFIX#/}"
+            DEST_PREFIX="/${CLEAN_PREFIX%/}"
+          fi
+
+          DEST_ROOT="${DEST_BASE}${DEST_PREFIX}"
+
+          while IFS= read -r entry; do
+            entry="${entry#./}"
+            [ -n "$entry" ] || continue
+
+            html_key="${DEST_ROOT}/${entry%.xml}.html"
+
+            if ! aws s3 rm "$html_key" >/dev/null 2>&1; then
+              echo "Skipped missing $html_key" >&2
+            else
+              echo "Removed $html_key"
+            fi
+          done <"$DELETED_LIST"
+
+          rm -f "$DELETED_LIST"
+
+      - name: Run standalone transform
+        if: steps.prep.outputs.should_transform == 'true'
+        env:
+          RUN_SCOPE:       ${{ steps.prep.outputs.run_scope }}
+          XSLT_ENTRYPOINT: ${{ vars.XSLT_ENTRYPOINT }}
+          ANT_LOG_LEVEL:   ${{ vars.ANT_LOG_LEVEL || 'default' }}
+          TEI_FILE:        ${{ vars.TEI_FILE || '**/*.xml' }}
+        # Optional: if your repository keeps XML inputs outside ./source,
+        # add a step before this one that replaces the source directory with a
+        # symlink, for example:
+        #   run: |
+        #     rm -rf source
+        #     ln -s ../d source
+        run: |
+          set -euo pipefail
+
+          RUN_SCOPE_VALUE="${RUN_SCOPE:-changed}"
+          WATCH_SUBDIR_CLEAN="${WATCH_SUBDIR#/}"
+          WATCH_SUBDIR_CLEAN="${WATCH_SUBDIR_CLEAN%/}"
+
+          HOST_CHANGED_LIST="${CHANGED_FILES_FILE:-source/changed-files.txt}"
+          case "$HOST_CHANGED_LIST" in
+            source/*) ;;
+            *) echo "CHANGED_FILES_FILE must be under source/ (got $HOST_CHANGED_LIST)" >&2; exit 1 ;;
+          esac
+          HOST_CHANGED_LIST="${HOST_CHANGED_LIST#./}"
+          CONTAINER_CHANGED_LIST="/tmp/opt/cdcp/${HOST_CHANGED_LIST}"
+
+          if [ "$RUN_SCOPE_VALUE" = "changed" ]; then
+            export CHANGED_FILES_FILE="$CONTAINER_CHANGED_LIST"
+            unset TEI_FILE
+          else
+            unset CHANGED_FILES_FILE
+            if [ -n "$WATCH_SUBDIR_CLEAN" ]; then
+              export TEI_FILE="${WATCH_SUBDIR_CLEAN}/**/*.xml"
+            fi
+          fi
+
+          docker compose -f compose-standalone.yml up --build --force-recreate --exit-code-from standalone
+          rm -f "$HOST_CHANGED_LIST"
+
+      - name: Sync outputs to S3
+        if: steps.prep.outputs.should_transform == 'true'
+        env:
+          RUN_SCOPE:     ${{ steps.prep.outputs.run_scope }}
+          OUTPUT_BUCKET: ${{ secrets.XTE_OUTPUT_BUCKET }}
+          OUTPUT_PREFIX: ${{ vars.XTE_OUTPUT_PREFIX || secrets.XTE_OUTPUT_PREFIX || '' }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$OUTPUT_BUCKET" ]; then
+            echo "OUTPUT_BUCKET secret not configured" >&2
+            exit 1
+          fi
+
+          if [ ! -d "./out" ]; then
+            echo "Expected transform output directory at ./out" >&2
+            exit 1
+          fi
+
+          DEST_BASE="s3://${OUTPUT_BUCKET%/}"
+          DEST_PREFIX=""
+          if [ -n "$OUTPUT_PREFIX" ]; then
+            CLEAN_PREFIX="${OUTPUT_PREFIX#/}"
+            DEST_PREFIX="/${CLEAN_PREFIX%/}"
+          fi
+
+          DEST="${DEST_BASE}${DEST_PREFIX}/"
+
+          echo "Syncing ./out/ to ${DEST}"
+
+          SYNC_ARGS=("./out/" "$DEST")
+          RUN_SCOPE_VALUE="${RUN_SCOPE:-changed}"
+          if [ "$RUN_SCOPE_VALUE" = "all" ]; then
+            SYNC_ARGS+=("--delete")
+          fi
+
+          aws s3 sync "${SYNC_ARGS[@]}"
+
+      - name: Record successful upload tag
+        if: steps.prep.outputs.should_transform == 'true' || steps.prep.outputs.has_deletions == 'true'
+        env:
+          LAST_SUCCESS_TAG_NAME: ${{ vars.LAST_SUCCESS_TAG_NAME || 'transform-last-success' }}
+        run: |
+          set -euo pipefail
+
+          TAG_NAME="${LAST_SUCCESS_TAG_NAME:-transform-last-success}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f "$TAG_NAME" "${GITHUB_SHA}"
+          git push origin "refs/tags/${TAG_NAME}" --force
+
+      - name: Tear down containers
+        if: always()
+        run: |
+          docker compose -f compose-standalone.yml down -v || true
